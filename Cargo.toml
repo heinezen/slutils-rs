@@ -1,0 +1,15 @@
+[package]
+name = "slutils"
+version = "0.1.0"
+authors = ["Christoph Heine (heinezen)"]
+edition = "2021"
+description = "Parsing library for AoE1/AoE2 graphics formats."
+repository = "https://github.com/heinezen/slutils-rs"
+license-file = "LICENSE"
+include = ["Cargo.toml", "src/**/*.rs"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.0", features = ["derive"] }
+byteorder = { version = "1.5.0" }
