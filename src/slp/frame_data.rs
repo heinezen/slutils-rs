@@ -182,6 +182,10 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
         let mut eor: bool = false;
 
         while !eor {
+            if pixels.len() > expected_size {
+                panic!("Expected {} pixels, got {}", expected_size, pixels.len());
+            }
+
             cmd = buffer.get(dpos).unwrap().clone();
 
             lower_nibble = cmd & 0x0F;
@@ -192,7 +196,9 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
                 // End of row
                 eor = true;
                 continue;
-            } else if lowest_crumb == 0b0000_0000 {
+            }
+
+            if lowest_crumb == 0b0000_0000 {
                 // Draw pixels with palette index
                 pixel_count = (cmd >> 2) as u32;
                 for _ in 0..pixel_count {
@@ -264,24 +270,42 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
                 }
             } else if lower_nibble == 0x0E {
                 // extended commands
-                if higher_nibble == 0x40 {
+                if higher_nibble == 0x00 {
+                    // xflip on
+                } else if higher_nibble == 0x10 {
+                    // xflip off
+                } else if higher_nibble == 0x20 {
+                    // switch to normal table
+                } else if higher_nibble == 0x30 {
+                    // switch to alternate table
+                } else if higher_nibble == 0x40 {
+                    // outline 1 draw
                     pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
-                } else if higher_nibble == 0x60 {
-                    pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
                 } else if higher_nibble == 0x50 {
+                    // outline 1 multi draw
                     dpos += 1;
                     pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                     for _ in 0..pixel_count {
                         pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
                     }
+                } else if higher_nibble == 0x60 {
+                    // outline 2 draw
+                    pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
                 } else if higher_nibble == 0x70 {
+                    // outline 2 multi draw
                     dpos += 1;
                     pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                     for _ in 0..pixel_count {
                         pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
                     }
+                } else if higher_nibble == 0x80 {
+                    // dither
+                } else if higher_nibble == 0x90 {
+                    // premultiplied alpha
+                } else if higher_nibble == 0xA0 {
+                    // original alpha
                 }
             }
 
