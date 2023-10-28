@@ -1,2 +1,8 @@
+# Build files
 /target
+
+# Local testing (to be removed)
 /test
+
+# IDE configs
+/.vscode
