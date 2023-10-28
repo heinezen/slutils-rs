@@ -198,114 +198,136 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
                 continue;
             }
 
-            if lowest_crumb == 0b0000_0000 {
-                // Draw pixels with palette index
-                pixel_count = (cmd >> 2) as u32;
-                for _ in 0..pixel_count {
-                    dpos += 1;
-                    color = buffer.get(dpos).unwrap().clone();
-                    pixels.push(PalettePixel::new(PixelType::PALETTE, color));
-                }
-            } else if lowest_crumb == 0b0000_0001 {
-                // Draw transparent pixels
-                (count, dpos) = cmd_or_next(buffer, cmd, 2, dpos);
-                for _ in 0..count {
-                    pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
-                }
-            } else if lower_nibble == 0x02 {
-                // Big draw
-                dpos += 1;
-                nextbyte = buffer.get(dpos).unwrap().clone();
-                pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
-
-                for _ in 0..pixel_count {
-                    dpos += 1;
-                    color = buffer.get(dpos).unwrap().clone();
-                    pixels.push(PalettePixel::new(PixelType::PALETTE, color));
-                }
-            } else if lower_nibble == 0x03 {
-                // Big skip
-                dpos += 1;
-                nextbyte = buffer.get(dpos).unwrap().clone();
-                pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
-
-                for _ in 0..pixel_count {
-                    pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
-                }
-            } else if lower_nibble == 0x06 {
-                // Player color
-                (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
-                for _ in 0..count {
-                    dpos += 1;
-                    color = buffer.get(dpos).unwrap().clone();
-
-                    pixels.push(PalettePixel::new(PixelType::PLAYER, color));
-                }
-            } else if lower_nibble == 0x07 {
-                // fill palette color
-                (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
-
-                dpos += 1;
-                color = buffer.get(dpos).unwrap().clone();
-
-                for _ in 0..count {
-                    pixels.push(PalettePixel::new(PixelType::PALETTE, color));
-                }
-            } else if lower_nibble == 0x0A {
-                // fill player color
-                (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
-
-                dpos += 1;
-                color = buffer.get(dpos).unwrap().clone();
-
-                for _ in 0..count {
-                    pixels.push(PalettePixel::new(PixelType::PLAYER, color));
-                }
-            } else if lower_nibble == 0x0B {
-                // shadow fill
-                (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
-
-                for _ in 0..count {
-                    pixels.push(PalettePixel::new(PixelType::SHADOW, 0));
-                }
-            } else if lower_nibble == 0x0E {
-                // extended commands
-                if higher_nibble == 0x00 {
-                    // xflip on
-                } else if higher_nibble == 0x10 {
-                    // xflip off
-                } else if higher_nibble == 0x20 {
-                    // switch to normal table
-                } else if higher_nibble == 0x30 {
-                    // switch to alternate table
-                } else if higher_nibble == 0x40 {
-                    // outline 1 draw
-                    pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
-                } else if higher_nibble == 0x50 {
-                    // outline 1 multi draw
-                    dpos += 1;
-                    pixel_count = buffer.get(dpos).unwrap().clone() as u32;
-
+            match lowest_crumb {
+                // Lesser draw
+                0b0000_0000 => {
+                    pixel_count = (cmd >> 2) as u32;
                     for _ in 0..pixel_count {
-                        pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
+                        dpos += 1;
+                        color = buffer.get(dpos).unwrap().clone();
+                        pixels.push(PalettePixel::new(PixelType::PALETTE, color));
                     }
-                } else if higher_nibble == 0x60 {
-                    // outline 2 draw
-                    pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
-                } else if higher_nibble == 0x70 {
-                    // outline 2 multi draw
-                    dpos += 1;
-                    pixel_count = buffer.get(dpos).unwrap().clone() as u32;
+                }
+                // Lesser skip
+                0b0000_0001 => {
+                    (count, dpos) = cmd_or_next(buffer, cmd, 2, dpos);
+                    for _ in 0..count {
+                        pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+                    }
+                }
+                _ => {
+                    match lower_nibble {
+                        // Big draw
+                        0x02 => {
+                            dpos += 1;
+                            nextbyte = buffer.get(dpos).unwrap().clone();
+                            pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
 
-                    for _ in 0..pixel_count {
-                        pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
+                            for _ in 0..pixel_count {
+                                dpos += 1;
+                                color = buffer.get(dpos).unwrap().clone();
+                                pixels.push(PalettePixel::new(PixelType::PALETTE, color));
+                            }
+                        }
+                        // Big skip
+                        0x03 => {
+                            dpos += 1;
+                            nextbyte = buffer.get(dpos).unwrap().clone();
+                            pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
+
+                            for _ in 0..pixel_count {
+                                pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+                            }
+                        }
+                        // Player color
+                        0x06 => {
+                            (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
+                            for _ in 0..count {
+                                dpos += 1;
+                                color = buffer.get(dpos).unwrap().clone();
+
+                                pixels.push(PalettePixel::new(PixelType::PLAYER, color));
+                            }
+                        }
+                        // fill palette color
+                        0x07 => {
+                            (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
+
+                            dpos += 1;
+                            color = buffer.get(dpos).unwrap().clone();
+
+                            for _ in 0..count {
+                                pixels.push(PalettePixel::new(PixelType::PALETTE, color));
+                            }
+                        }
+                        // fill player color
+                        0x0A => {
+                            (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
+
+                            dpos += 1;
+                            color = buffer.get(dpos).unwrap().clone();
+
+                            for _ in 0..count {
+                                pixels.push(PalettePixel::new(PixelType::PLAYER, color));
+                            }
+                        }
+                        // shadow fill
+                        0x0B => {
+                            (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
+
+                            for _ in 0..count {
+                                pixels.push(PalettePixel::new(PixelType::SHADOW, 0));
+                            }
+                        }
+                        // Extended command
+                        0x0E => match higher_nibble {
+                            // xflip on
+                            0x00 => {}
+                            // xflip off
+                            0x10 => {}
+                            // switch to normal table
+                            0x20 => {}
+                            // switch to alternate table
+                            0x30 => {}
+                            // outline 1 draw
+                            0x40 => {
+                                pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
+                            }
+                            // outline 1 multi draw
+                            0x50 => {
+                                dpos += 1;
+                                pixel_count = buffer.get(dpos).unwrap().clone() as u32;
+
+                                for _ in 0..pixel_count {
+                                    pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
+                                }
+                            }
+                            // outline 2 draw
+                            0x60 => {
+                                pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
+                            }
+                            // outline 2 multi draw
+                            0x70 => {
+                                dpos += 1;
+                                pixel_count = buffer.get(dpos).unwrap().clone() as u32;
+
+                                for _ in 0..pixel_count {
+                                    pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
+                                }
+                            }
+                            // dither
+                            0x80 => {}
+                            // premultiplied alpha
+                            0x90 => {}
+                            // original alpha
+                            0xA0 => {}
+                            _ => panic!(
+                                "Unknown extended slp draw command: {:#x} at dpos {:#x}",
+                                cmd, dpos
+                            ),
+                        },
+                        _ => panic!("Unknown slp draw command: {:#x} at dpos {:#x}", cmd, dpos),
                     }
-                } else if higher_nibble == 0x80 {
-                    // dither
-                } else if higher_nibble == 0x90 {
-                    // premultiplied alpha
-                } else if higher_nibble == 0xA0 {
-                    // original alpha
                 }
             }
 
