@@ -6,7 +6,12 @@ use std::io::Cursor;
 
 use crate::slp::unpack::UnpackFixedSize;
 
-pub struct SLPFrameInfo {
+pub enum SLPType {
+    MAIN,
+    SHADOW,
+}
+
+pub struct SLPFrameInfoData {
     pub cmd_table_offset: u32,
     pub outline_table_offset: u32,
     palette_offset: u32,
@@ -17,7 +22,7 @@ pub struct SLPFrameInfo {
     hotspot_y: i32,
 }
 
-impl SLPFrameInfo {
+impl SLPFrameInfoData {
     pub fn new(
         cmd_table_offset: u32,
         outline_table_offset: u32,
@@ -27,8 +32,8 @@ impl SLPFrameInfo {
         height: i32,
         hotspot_x: i32,
         hotspot_y: i32,
-    ) -> SLPFrameInfo {
-        SLPFrameInfo {
+    ) -> SLPFrameInfoData {
+        SLPFrameInfoData {
             cmd_table_offset,
             outline_table_offset,
             palette_offset,
@@ -41,7 +46,7 @@ impl SLPFrameInfo {
     }
 }
 
-impl UnpackFixedSize for SLPFrameInfo {
+impl UnpackFixedSize for SLPFrameInfoData {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self {
         let mut byte_reader = Cursor::new(&buffer[offset..offset + 4]);
         let cmd_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
@@ -67,7 +72,7 @@ impl UnpackFixedSize for SLPFrameInfo {
         let mut byte_reader = Cursor::new(&buffer[offset + 28..offset + 32]);
         let hotspot_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        return SLPFrameInfo::new(
+        return SLPFrameInfoData::new(
             cmd_table_offset,
             outline_table_offset,
             palette_offset,
@@ -104,7 +109,7 @@ impl UnpackFixedSize for SLPFrameInfo {
         let mut byte_reader = Cursor::new(&bytes[28..32]);
         let hotspot_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        return SLPFrameInfo::new(
+        return SLPFrameInfoData::new(
             cmd_table_offset,
             outline_table_offset,
             palette_offset,
@@ -117,7 +122,7 @@ impl UnpackFixedSize for SLPFrameInfo {
     }
 }
 
-impl fmt::Display for SLPFrameInfo {
+impl fmt::Display for SLPFrameInfoData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

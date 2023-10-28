@@ -1,6 +1,7 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use super::{frame_data::SLPFrameBound, frame_info::SLPFrameInfo};
+use super::frame_info::SLPFrameInfoData;
+use super::row_bound::SLPRowBound;
 
 pub trait UnpackFixedSize {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self;
@@ -8,22 +9,22 @@ pub trait UnpackFixedSize {
 }
 
 pub trait UnpackFrameData<T> {
-    fn from_buffer(buffer: &[u8], frame_info: &SLPFrameInfo) -> Self;
+    fn from_buffer(buffer: &[u8], frame_info: &SLPFrameInfoData) -> Self;
 
-    fn decode_outline_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPFrameBound>;
+    fn decode_outline_table(buffer: &[u8], frame_info: &SLPFrameInfoData) -> Vec<SLPRowBound>;
 
-    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<u32>;
+    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfoData) -> Vec<u32>;
 
     fn decode_frame(
         buffer: &[u8],
-        frame_info: &SLPFrameInfo,
-        outline_table: &Vec<SLPFrameBound>,
+        frame_info: &SLPFrameInfoData,
+        outline_table: &Vec<SLPRowBound>,
         cmd_table: &Vec<u32>,
     ) -> Vec<Vec<T>>;
 
     fn decode_row(
         buffer: &[u8],
-        outline: &SLPFrameBound,
+        outline: &SLPRowBound,
         first_cmd_offset: usize,
         expected_size: usize,
     ) -> Vec<T>;

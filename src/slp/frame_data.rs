@@ -1,51 +1,25 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
 use std::fmt;
-use std::mem::size_of;
 
+use super::definitions::SLP_FRAME_BOUNDS_SIZE;
 use super::frame_info;
 use super::pixel::PalettePixel;
 use super::pixel::PixelType;
 use super::pixel::RGBAPixel;
+use super::row_bound::SLPRowBound;
 use super::unpack::UnpackFixedSize;
 use super::unpack::UnpackFrameData;
 
-pub struct SLPFrameBound {
-    pub left: u16,
-    pub right: u16,
-}
-
-impl SLPFrameBound {
-    pub fn new(left: u16, right: u16) -> Self {
-        Self { left, right }
-    }
-}
-
-impl UnpackFixedSize for SLPFrameBound {
-    fn from_buffer(buffer: &[u8], offset: usize) -> Self {
-        let left = u16::from_le_bytes([buffer[offset], buffer[offset + 1]]);
-        let right = u16::from_le_bytes([buffer[offset + 2], buffer[offset + 3]]);
-
-        return SLPFrameBound::new(left, right);
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Self {
-        let left = u16::from_le_bytes([bytes[0], bytes[1]]);
-        let right = u16::from_le_bytes([bytes[2], bytes[3]]);
-
-        return SLPFrameBound::new(left, right);
-    }
-}
-
-pub struct SLPFrameData<T> {
-    bounds_table: Vec<SLPFrameBound>,
+pub struct SLPFrame<T> {
+    bounds_table: Vec<SLPRowBound>,
     cmd_table: Vec<u32>,
     row_data: Vec<Vec<T>>,
 }
 
-impl SLPFrameData<PalettePixel> {
+impl SLPFrame<PalettePixel> {
     pub fn new(
-        outline_table: Vec<SLPFrameBound>,
+        outline_table: Vec<SLPRowBound>,
         cmd_table: Vec<u32>,
         row_data: Vec<Vec<PalettePixel>>,
     ) -> Self {
@@ -68,35 +42,31 @@ fn cmd_or_next(buffer: &[u8], cmd: u8, n: u8, pos: usize) -> (u8, usize) {
     }
 }
 
-impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
-    fn from_buffer(buffer: &[u8], frame_info: &frame_info::SLPFrameInfo) -> Self {
-        let outline_table = SLPFrameData::<PalettePixel>::decode_outline_table(buffer, frame_info);
-        let cmd_table = SLPFrameData::<PalettePixel>::decode_cmd_table(buffer, frame_info);
-        let row_data = SLPFrameData::<PalettePixel>::decode_frame(
-            buffer,
-            frame_info,
-            &outline_table,
-            &cmd_table,
-        );
+impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
+    fn from_buffer(buffer: &[u8], frame_info: &frame_info::SLPFrameInfoData) -> Self {
+        let outline_table = SLPFrame::<PalettePixel>::decode_outline_table(buffer, frame_info);
+        let cmd_table = SLPFrame::<PalettePixel>::decode_cmd_table(buffer, frame_info);
+        let row_data =
+            SLPFrame::<PalettePixel>::decode_frame(buffer, frame_info, &outline_table, &cmd_table);
 
-        return SLPFrameData::new(outline_table, cmd_table, row_data);
+        return SLPFrame::new(outline_table, cmd_table, row_data);
     }
 
     fn decode_outline_table(
         buffer: &[u8],
-        frame_info: &super::frame_info::SLPFrameInfo,
-    ) -> Vec<SLPFrameBound> {
-        let mut outline_table = Vec::<SLPFrameBound>::new();
+        frame_info: &super::frame_info::SLPFrameInfoData,
+    ) -> Vec<SLPRowBound> {
+        let mut outline_table = Vec::<SLPRowBound>::new();
         for j in 0..frame_info.height {
-            let offset = frame_info.outline_table_offset as usize
-                + (j as usize) * size_of::<SLPFrameBound>();
-            let outline = SLPFrameBound::from_buffer(&buffer, offset);
+            let offset =
+                frame_info.outline_table_offset as usize + (j as usize) * SLP_FRAME_BOUNDS_SIZE;
+            let outline = SLPRowBound::from_buffer(&buffer, offset);
             outline_table.push(outline);
         }
         return outline_table;
     }
 
-    fn decode_cmd_table(buffer: &[u8], frame_info: &frame_info::SLPFrameInfo) -> Vec<u32> {
+    fn decode_cmd_table(buffer: &[u8], frame_info: &frame_info::SLPFrameInfoData) -> Vec<u32> {
         let mut row_offsets = Vec::<u32>::new();
         for j in 0..frame_info.height {
             let offset: usize = frame_info.cmd_table_offset as usize + (j as usize) * 4;
@@ -113,8 +83,8 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
 
     fn decode_frame(
         buffer: &[u8],
-        frame_info: &frame_info::SLPFrameInfo,
-        outline_table: &Vec<SLPFrameBound>,
+        frame_info: &frame_info::SLPFrameInfoData,
+        outline_table: &Vec<SLPRowBound>,
         cmd_table: &Vec<u32>,
     ) -> Vec<Vec<PalettePixel>> {
         let mut row_data = Vec::<Vec<PalettePixel>>::new();
@@ -122,7 +92,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
             let row_offset = cmd_table.get(i as usize).unwrap();
             let outline = outline_table.get(i as usize).unwrap();
 
-            let row = SLPFrameData::<PalettePixel>::decode_row(
+            let row = SLPFrame::<PalettePixel>::decode_row(
                 buffer,
                 outline,
                 *row_offset as usize,
@@ -136,24 +106,31 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
 
     fn decode_row(
         buffer: &[u8],
-        outline: &SLPFrameBound,
+        bounds: &SLPRowBound,
         first_cmd_offset: usize,
         expected_size: usize,
     ) -> Vec<PalettePixel> {
         let mut row = Vec::<PalettePixel>::new();
 
-        for _ in 0..outline.left {
+        if bounds.full_row {
+            for _ in 0..expected_size {
+                row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+            }
+            return row;
+        }
+
+        for _ in 0..bounds.left {
             row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
         }
 
-        let mut color_cmds = SLPFrameData::<PalettePixel>::decode_row_cmds(
+        let mut color_cmds = SLPFrame::<PalettePixel>::decode_row_cmds(
             buffer,
             first_cmd_offset,
-            expected_size - (outline.left + outline.right) as usize,
+            expected_size - (bounds.left + bounds.right) as usize,
         );
         row.append(&mut color_cmds);
 
-        for _ in 0..outline.right {
+        for _ in 0..bounds.right {
             row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
         }
 
@@ -183,7 +160,12 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
 
         while !eor {
             if pixels.len() > expected_size {
-                panic!("Expected {} pixels, got {}", expected_size, pixels.len());
+                panic!(
+                    "Expected {} pixels, but read {} without reaching end or row. dpos = {:#x}",
+                    expected_size,
+                    pixels.len(),
+                    dpos
+                );
             }
 
             cmd = buffer.get(dpos).unwrap().clone();
@@ -338,7 +320,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrameData<PalettePixel> {
     }
 }
 
-impl fmt::Display for SLPFrameData<PalettePixel> {
+impl fmt::Display for SLPFrame<PalettePixel> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out = String::new();
 
@@ -370,7 +352,7 @@ impl fmt::Display for SLPFrameData<PalettePixel> {
     }
 }
 
-impl fmt::Display for SLPFrameData<RGBAPixel> {
+impl fmt::Display for SLPFrame<RGBAPixel> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out = String::new();
 
