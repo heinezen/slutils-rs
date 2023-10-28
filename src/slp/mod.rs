@@ -3,4 +3,6 @@
 mod frame_data;
 mod frame_info;
 mod header;
+mod pixel;
 pub mod slp;
+pub mod unpack;

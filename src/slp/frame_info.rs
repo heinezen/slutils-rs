@@ -1,15 +1,18 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
 use byteorder::{LittleEndian, ReadBytesExt};
+use std::fmt;
 use std::io::Cursor;
 
+use crate::slp::unpack::UnpackFixedSize;
+
 pub struct SLPFrameInfo {
-    cmd_table_offset: u32,
-    outline_table_offset: u32,
+    pub cmd_table_offset: u32,
+    pub outline_table_offset: u32,
     palette_offset: u32,
     properties: u32,
-    width: i32,
-    height: i32,
+    pub width: i32,
+    pub height: i32,
     hotspot_x: i32,
     hotspot_y: i32,
 }
@@ -38,12 +41,7 @@ impl SLPFrameInfo {
     }
 }
 
-pub trait Unpack {
-    fn from_buffer(buffer: &[u8], offset: usize) -> Self;
-    fn from_bytes(bytes: &[u8]) -> Self;
-}
-
-impl Unpack for SLPFrameInfo {
+impl UnpackFixedSize for SLPFrameInfo {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self {
         let mut byte_reader = Cursor::new(&buffer[offset..offset + 4]);
         let cmd_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
@@ -116,5 +114,22 @@ impl Unpack for SLPFrameInfo {
             hotspot_x,
             hotspot_y,
         );
+    }
+}
+
+impl fmt::Display for SLPFrameInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "cmd_table_offset: {:#x}\noutline_table_offset: {:#x}\npalette_offset: {}\nproperties: {:#x}\nwidth: {}\nheight: {}\nhotspot_x: {}\nhotspot_y: {}",
+            self.cmd_table_offset,
+            self.outline_table_offset,
+            self.palette_offset,
+            self.properties,
+            self.width,
+            self.height,
+            self.hotspot_x,
+            self.hotspot_y
+        )
     }
 }

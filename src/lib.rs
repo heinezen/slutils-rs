@@ -10,5 +10,14 @@ pub fn parse_file(path: PathBuf) {
     let content = std::fs::read(path).expect("Failed to read file");
     let slp = parse_slp(content);
 
-    println!("{}", slp.header.version);
+    println!("{}", slp.header.to_string());
+    println!("---------------------");
+    for frame_info in slp.frame_infos {
+        println!("{}", frame_info.to_string());
+        println!("---------------------")
+    }
+    for frame_data in slp.frame_datas {
+        println!("{}", frame_data.to_string());
+        println!("---------------------")
+    }
 }
