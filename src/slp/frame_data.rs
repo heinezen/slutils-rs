@@ -356,6 +356,16 @@ impl fmt::Display for SLPFrameData<PalettePixel> {
             out.push_str(row.as_str());
         }
 
+        for row in self.row_data.iter() {
+            out.push_str(
+                row.iter()
+                    .map(|p| format!("{}", p))
+                    .collect::<String>()
+                    .as_str(),
+            );
+            out.push_str("\n");
+        }
+
         write!(f, "{}", out)
     }
 }

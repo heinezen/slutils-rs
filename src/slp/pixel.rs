@@ -1,5 +1,7 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
+use std::fmt;
+
 pub enum PixelType {
     /// 8-bit palette index
     PALETTE,
@@ -9,8 +11,6 @@ pub enum PixelType {
     TRANSPARENT,
     /// non-outline Player color
     PLAYER,
-    /// Black color (unused?)
-    BLACK,
     /// Player color outline color
     SPECIAL1,
     /// Black outline color
@@ -30,6 +30,21 @@ pub struct PalettePixel {
 impl PalettePixel {
     pub fn new(pixel_type: PixelType, index: u8) -> Self {
         Self { pixel_type, index }
+    }
+}
+
+impl fmt::Display for PalettePixel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.pixel_type {
+            PixelType::PALETTE => write!(f, "{:x}", self.index),
+            PixelType::SHADOW => write!(f, "SS"),
+            PixelType::TRANSPARENT => write!(f, "TT"),
+            PixelType::PLAYER => write!(f, "PP"),
+            PixelType::SPECIAL1 => write!(f, "LL"),
+            PixelType::SPECIAL2 => write!(f, "XX"),
+            PixelType::SHADOWv4 => write!(f, "SS"),
+            PixelType::PLAYERv4 => write!(f, "PP"),
+        }
     }
 }
 
