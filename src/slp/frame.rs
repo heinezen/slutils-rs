@@ -3,30 +3,39 @@
 use std::fmt;
 
 use super::definitions::SLP_FRAME_BOUNDS_SIZE;
-use super::frame_info;
+use super::frame_info::SLPFrameInfo;
 use super::pixel::PalettePixel;
 use super::pixel::PixelType;
 use super::pixel::RGBAPixel;
 use super::row_bound::SLPRowBound;
+use super::row_bound::SLPRowBoundData;
 use super::unpack::UnpackFixedSize;
 use super::unpack::UnpackFrameData;
 
+pub struct SLPFrameData {
+    bounds_table: Vec<SLPRowBoundData>,
+    cmd_table: Vec<u32>,
+    row_data: Vec<Vec<u8>>,
+}
+
 pub struct SLPFrame<T> {
+    data: Option<SLPFrameData>,
     bounds_table: Vec<SLPRowBound>,
     cmd_table: Vec<u32>,
-    row_data: Vec<Vec<T>>,
+    pixels: Vec<Vec<T>>,
 }
 
 impl SLPFrame<PalettePixel> {
     pub fn new(
-        outline_table: Vec<SLPRowBound>,
+        bounds_table: Vec<SLPRowBound>,
         cmd_table: Vec<u32>,
         row_data: Vec<Vec<PalettePixel>>,
     ) -> Self {
         Self {
-            bounds_table: outline_table,
+            data: None,
+            bounds_table,
             cmd_table,
-            row_data: row_data,
+            pixels: row_data,
         }
     }
 }
@@ -43,33 +52,30 @@ fn cmd_or_next(buffer: &[u8], cmd: u8, n: u8, pos: usize) -> (u8, usize) {
 }
 
 impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
-    fn from_buffer(buffer: &[u8], frame_info: &frame_info::SLPFrameInfoData) -> Self {
-        let outline_table = SLPFrame::<PalettePixel>::decode_outline_table(buffer, frame_info);
+    fn from_buffer(buffer: &[u8], frame_info: &SLPFrameInfo) -> Self {
+        let bounds_table = SLPFrame::<PalettePixel>::decode_bounds_table(buffer, frame_info);
         let cmd_table = SLPFrame::<PalettePixel>::decode_cmd_table(buffer, frame_info);
         let row_data =
-            SLPFrame::<PalettePixel>::decode_frame(buffer, frame_info, &outline_table, &cmd_table);
+            SLPFrame::<PalettePixel>::decode_frame(buffer, frame_info, &bounds_table, &cmd_table);
 
-        return SLPFrame::new(outline_table, cmd_table, row_data);
+        return SLPFrame::new(bounds_table, cmd_table, row_data);
     }
 
-    fn decode_outline_table(
-        buffer: &[u8],
-        frame_info: &super::frame_info::SLPFrameInfoData,
-    ) -> Vec<SLPRowBound> {
-        let mut outline_table = Vec::<SLPRowBound>::new();
-        for j in 0..frame_info.height {
+    fn decode_bounds_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPRowBound> {
+        let mut bounds_table = Vec::<SLPRowBound>::new();
+        for j in 0..frame_info.data.height {
             let offset =
-                frame_info.outline_table_offset as usize + (j as usize) * SLP_FRAME_BOUNDS_SIZE;
-            let outline = SLPRowBound::from_buffer(&buffer, offset);
-            outline_table.push(outline);
+                frame_info.data.bounds_table_offset as usize + (j as usize) * SLP_FRAME_BOUNDS_SIZE;
+            let bounds = SLPRowBound::from_buffer(&buffer, offset);
+            bounds_table.push(bounds);
         }
-        return outline_table;
+        return bounds_table;
     }
 
-    fn decode_cmd_table(buffer: &[u8], frame_info: &frame_info::SLPFrameInfoData) -> Vec<u32> {
+    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<u32> {
         let mut row_offsets = Vec::<u32>::new();
-        for j in 0..frame_info.height {
-            let offset: usize = frame_info.cmd_table_offset as usize + (j as usize) * 4;
+        for j in 0..frame_info.data.height {
+            let offset: usize = frame_info.data.cmd_table_offset as usize + (j as usize) * 4;
             let row = u32::from_le_bytes([
                 buffer[offset],
                 buffer[offset + 1],
@@ -83,20 +89,20 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
 
     fn decode_frame(
         buffer: &[u8],
-        frame_info: &frame_info::SLPFrameInfoData,
-        outline_table: &Vec<SLPRowBound>,
+        frame_info: &SLPFrameInfo,
+        bounds_table: &Vec<SLPRowBound>,
         cmd_table: &Vec<u32>,
     ) -> Vec<Vec<PalettePixel>> {
         let mut row_data = Vec::<Vec<PalettePixel>>::new();
-        for i in 0..frame_info.height {
+        for i in 0..frame_info.data.height {
             let row_offset = cmd_table.get(i as usize).unwrap();
-            let outline = outline_table.get(i as usize).unwrap();
+            let bounds = bounds_table.get(i as usize).unwrap();
 
             let row = SLPFrame::<PalettePixel>::decode_row(
                 buffer,
-                outline,
+                bounds,
                 *row_offset as usize,
-                frame_info.width as usize,
+                frame_info.data.width as usize,
             );
             row_data.push(row);
         }
@@ -119,18 +125,18 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             return row;
         }
 
-        for _ in 0..bounds.left {
+        for _ in 0..bounds.data.left {
             row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
         }
 
         let mut color_cmds = SLPFrame::<PalettePixel>::decode_row_cmds(
             buffer,
             first_cmd_offset,
-            expected_size - (bounds.left + bounds.right) as usize,
+            expected_size - (bounds.data.left + bounds.data.right) as usize,
         );
         row.append(&mut color_cmds);
 
-        for _ in 0..bounds.right {
+        for _ in 0..bounds.data.right {
             row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
         }
 
@@ -324,21 +330,21 @@ impl fmt::Display for SLPFrame<PalettePixel> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out = String::new();
 
-        out.push_str("| Row   | Start Offset | Outline (left/right) |\n");
-        out.push_str("|-------|--------------|----------------------|\n");
+        out.push_str("| Row   | Start Offset | Bounds (left/right) |\n");
+        out.push_str("|-------|--------------|---------------------|\n");
 
-        for i in 0..self.row_data.len() {
+        for i in 0..self.pixels.len() {
             let start_offset = self.cmd_table.get(i).unwrap();
-            let outline = self.bounds_table.get(i).unwrap();
+            let bounds = self.bounds_table.get(i).unwrap();
 
             let row = format!(
-                "| {:<5} | {:<#12x} | {:>4} / {:<13} |\n",
-                i, start_offset, outline.left, outline.right
+                "| {:<5} | {:<#12x} | {:>4} / {:<12} |\n",
+                i, start_offset, bounds.data.left, bounds.data.right
             );
             out.push_str(row.as_str());
         }
 
-        for row in self.row_data.iter() {
+        for row in self.pixels.iter() {
             out.push_str(
                 row.iter()
                     .map(|p| format!("{}", p))
@@ -359,13 +365,13 @@ impl fmt::Display for SLPFrame<RGBAPixel> {
         out.push_str("| Row   | Start Offset | Outline (left/right) |\n");
         out.push_str("|-------|--------------|----------------------|\n");
 
-        for i in 0..self.row_data.len() {
+        for i in 0..self.pixels.len() {
             let start_offset = self.cmd_table.get(i).unwrap();
-            let outline = self.bounds_table.get(i).unwrap();
+            let bounds = self.bounds_table.get(i).unwrap();
 
             let row = format!(
                 "| {:<5} | {:<#12x} | {:>4} / {:<13} |\n",
-                i, start_offset, outline.left, outline.right
+                i, start_offset, bounds.data.left, bounds.data.right
             );
             out.push_str(row.as_str());
         }

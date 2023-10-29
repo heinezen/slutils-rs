@@ -2,19 +2,32 @@
 
 use super::unpack::UnpackFixedSize;
 
-pub struct SLPRowBound {
+pub struct SLPRowBoundData {
     pub left: u16,
     pub right: u16,
+}
+
+impl SLPRowBoundData {
+    pub fn new(left: u16, right: u16) -> Self {
+        Self { left, right }
+    }
+}
+
+pub struct SLPRowBound {
+    pub data: SLPRowBoundData,
     pub full_row: bool,
 }
 
 impl SLPRowBound {
     pub fn new(left: u16, right: u16, full_row: bool) -> Self {
         Self {
-            left,
-            right,
+            data: SLPRowBoundData::new(left, right),
             full_row,
         }
+    }
+
+    pub fn from_data(data: SLPRowBoundData, full_row: bool) -> Self {
+        Self { data, full_row }
     }
 }
 

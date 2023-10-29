@@ -1,7 +1,7 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
 pub mod definitions;
-mod frame_data;
+mod frame;
 mod frame_info;
 mod header;
 mod pixel;

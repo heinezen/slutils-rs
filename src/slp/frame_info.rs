@@ -6,14 +6,23 @@ use std::io::Cursor;
 
 use crate::slp::unpack::UnpackFixedSize;
 
-pub enum SLPType {
+pub enum FrameType {
     MAIN,
     SHADOW,
 }
 
+impl fmt::Display for FrameType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FrameType::MAIN => write!(f, "MAIN"),
+            FrameType::SHADOW => write!(f, "SHADOW"),
+        }
+    }
+}
+
 pub struct SLPFrameInfoData {
     pub cmd_table_offset: u32,
-    pub outline_table_offset: u32,
+    pub bounds_table_offset: u32,
     palette_offset: u32,
     properties: u32,
     pub width: i32,
@@ -25,17 +34,17 @@ pub struct SLPFrameInfoData {
 impl SLPFrameInfoData {
     pub fn new(
         cmd_table_offset: u32,
-        outline_table_offset: u32,
+        bounds_table_offset: u32,
         palette_offset: u32,
         properties: u32,
         width: i32,
         height: i32,
         hotspot_x: i32,
         hotspot_y: i32,
-    ) -> SLPFrameInfoData {
-        SLPFrameInfoData {
+    ) -> Self {
+        Self {
             cmd_table_offset,
-            outline_table_offset,
+            bounds_table_offset,
             palette_offset,
             properties,
             width,
@@ -52,7 +61,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let cmd_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 4..offset + 8]);
-        let outline_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
+        let bounds_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 8..offset + 12]);
         let palette_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
@@ -74,7 +83,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
 
         return SLPFrameInfoData::new(
             cmd_table_offset,
-            outline_table_offset,
+            bounds_table_offset,
             palette_offset,
             properties,
             width,
@@ -89,7 +98,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let cmd_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&bytes[4..8]);
-        let outline_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
+        let bounds_table_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&bytes[8..12]);
         let palette_offset: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
@@ -111,7 +120,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
 
         return SLPFrameInfoData::new(
             cmd_table_offset,
-            outline_table_offset,
+            bounds_table_offset,
             palette_offset,
             properties,
             width,
@@ -126,15 +135,71 @@ impl fmt::Display for SLPFrameInfoData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "cmd_table_offset: {:#x}\noutline_table_offset: {:#x}\npalette_offset: {}\nproperties: {:#x}\nwidth: {}\nheight: {}\nhotspot_x: {}\nhotspot_y: {}",
+            "cmd_table_offset: {:#x}\nbounds_table_offset: {:#x}\npalette_offset: {}\nproperties: {:#x}\nwidth: {}\nheight: {}\nhotspot_x: {}\nhotspot_y: {}",
             self.cmd_table_offset,
-            self.outline_table_offset,
+            self.bounds_table_offset,
             self.palette_offset,
             self.properties,
             self.width,
             self.height,
             self.hotspot_x,
             self.hotspot_y
+        )
+    }
+}
+
+pub struct SLPFrameInfo {
+    pub data: SLPFrameInfoData,
+    pub frame_type: FrameType,
+    pub slp_version: [u8; 4],
+}
+
+impl SLPFrameInfo {
+    pub fn new(
+        cmd_table_offset: u32,
+        bounds_table_offset: u32,
+        palette_offset: u32,
+        properties: u32,
+        width: i32,
+        height: i32,
+        hotspot_x: i32,
+        hotspot_y: i32,
+        frame_type: FrameType,
+        slp_version: [u8; 4],
+    ) -> Self {
+        Self {
+            data: SLPFrameInfoData::new(
+                cmd_table_offset,
+                bounds_table_offset,
+                palette_offset,
+                properties,
+                width,
+                height,
+                hotspot_x,
+                hotspot_y,
+            ),
+            frame_type,
+            slp_version,
+        }
+    }
+
+    pub fn from_data(data: SLPFrameInfoData, frame_type: FrameType, slp_version: [u8; 4]) -> Self {
+        Self {
+            data,
+            frame_type,
+            slp_version,
+        }
+    }
+}
+
+impl fmt::Display for SLPFrameInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "data: {}\nframe_type: {:?}\nslp_version: {:?}",
+            self.data,
+            self.frame_type.to_string(),
+            self.slp_version
         )
     }
 }
