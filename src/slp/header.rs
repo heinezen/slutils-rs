@@ -29,8 +29,8 @@ impl SLPHeaderData {
     /// # Returns
     ///
     /// New SLP header.
-    pub fn new(version: SLPVersion, num_frames: u32, comment: [u8; 24]) -> SLPHeaderData {
-        SLPHeaderData {
+    pub fn new(version: SLPVersion, num_frames: u32, comment: [u8; 24]) -> Self {
+        Self {
             version,
             num_frames,
             comment,

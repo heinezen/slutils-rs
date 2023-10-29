@@ -37,10 +37,10 @@ pub struct SLPFrameInfoData {
     pub width: i32,
     /// Height of the frame.
     pub height: i32,
-    /// X coordinate of the hotspot.
-    hotspot_x: i32,
-    /// Y coordinate of the hotspot.
-    hotspot_y: i32,
+    /// X coordinate of the anchor point.
+    anchor_x: i32,
+    /// Y coordinate of the anchor point.
+    anchor_y: i32,
 }
 
 impl SLPFrameInfoData {
@@ -54,8 +54,8 @@ impl SLPFrameInfoData {
     /// * `properties` - Properties.
     /// * `width` - Width of the frame.
     /// * `height` - Height of the frame.
-    /// * `hotspot_x` - X coordinate of the hotspot.
-    /// * `hotspot_y` - Y coordinate of the hotspot.
+    /// * `anchor_x` - X coordinate of the anchor point.
+    /// * `anchor_y` - Y coordinate of the anchor point.
     ///
     /// # Returns
     ///
@@ -67,8 +67,8 @@ impl SLPFrameInfoData {
         properties: u32,
         width: i32,
         height: i32,
-        hotspot_x: i32,
-        hotspot_y: i32,
+        anchor_x: i32,
+        anchor_y: i32,
     ) -> Self {
         Self {
             cmd_table_offset,
@@ -77,8 +77,8 @@ impl SLPFrameInfoData {
             properties,
             width,
             height,
-            hotspot_x,
-            hotspot_y,
+            anchor_x,
+            anchor_y,
         }
     }
 }
@@ -104,10 +104,10 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let height: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 24..offset + 28]);
-        let hotspot_x: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
+        let anchor_x: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 28..offset + 32]);
-        let hotspot_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
+        let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         return SLPFrameInfoData::new(
             cmd_table_offset,
@@ -116,8 +116,8 @@ impl UnpackFixedSize for SLPFrameInfoData {
             properties,
             width,
             height,
-            hotspot_x,
-            hotspot_y,
+            anchor_x,
+            anchor_y,
         );
     }
 
@@ -141,10 +141,10 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let height: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&bytes[24..28]);
-        let hotspot_x: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
+        let anchor_x: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         let mut byte_reader = Cursor::new(&bytes[28..32]);
-        let hotspot_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
+        let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
         return SLPFrameInfoData::new(
             cmd_table_offset,
@@ -153,8 +153,8 @@ impl UnpackFixedSize for SLPFrameInfoData {
             properties,
             width,
             height,
-            hotspot_x,
-            hotspot_y,
+            anchor_x,
+            anchor_y,
         );
     }
 }
@@ -163,15 +163,15 @@ impl fmt::Display for SLPFrameInfoData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "cmd_table_offset: {:#x}\nbounds_table_offset: {:#x}\npalette_offset: {}\nproperties: {:#x}\nwidth: {}\nheight: {}\nhotspot_x: {}\nhotspot_y: {}",
+            "cmd_table_offset: {:#x}\nbounds_table_offset: {:#x}\npalette_offset: {}\nproperties: {:#x}\nwidth: {}\nheight: {}\nanchor_x: {}\nanchor_y: {}",
             self.cmd_table_offset,
             self.bounds_table_offset,
             self.palette_offset,
             self.properties,
             self.width,
             self.height,
-            self.hotspot_x,
-            self.hotspot_y
+            self.anchor_x,
+            self.anchor_y
         )
     }
 }
@@ -197,8 +197,8 @@ impl SLPFrameInfo {
     /// * `properties` - Properties.
     /// * `width` - Width of the frame.
     /// * `height` - Height of the frame.
-    /// * `hotspot_x` - X coordinate of the hotspot.
-    /// * `hotspot_y` - Y coordinate of the hotspot.
+    /// * `anchor_x` - X coordinate of the anchor point.
+    /// * `anchor_y` - Y coordinate of the anchor point.
     /// * `frame_type` - Frame type.
     /// * `slp_version` - SLP version.
     ///
@@ -212,8 +212,8 @@ impl SLPFrameInfo {
         properties: u32,
         width: i32,
         height: i32,
-        hotspot_x: i32,
-        hotspot_y: i32,
+        anchor_x: i32,
+        anchor_y: i32,
         frame_type: SLPFrameType,
         slp_version: SLPVersion,
     ) -> Self {
@@ -225,8 +225,8 @@ impl SLPFrameInfo {
                 properties,
                 width,
                 height,
-                hotspot_x,
-                hotspot_y,
+                anchor_x,
+                anchor_y,
             ),
             frame_type,
             slp_version,
