@@ -1,6 +1,11 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
+use std::collections::HashMap;
 use std::fmt;
+
+use crate::util::image::RGBAImageConvertible;
+use crate::util::matrix::Matrix2D;
+use crate::util::pixel::RGBAConvertible;
 
 use super::definitions::SLP_FRAME_BOUNDS_SIZE;
 use super::definitions::SLP_FRAME_CMD_OFFSET_SIZE;
@@ -362,6 +367,49 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         }
 
         return pixels;
+    }
+}
+
+impl RGBAImageConvertible for SLPFrame<PalettePixel> {
+    fn to_rgba_matrix(&self) -> Matrix2D<[u8; 4]> {
+        let height = self.pixels.len();
+        let width = self.pixels.get(0).unwrap().len();
+        let mut matrix = Matrix2D::<[u8; 4]>::zeros(width, height);
+
+        for (i, row) in self.pixels.iter().enumerate() {
+            for (j, pixel) in row.iter().enumerate() {
+                // TODO: lookup table from palette
+                let rgba = pixel.to_rgba(HashMap::<usize, [u8; 4]>::new());
+                matrix[(i, j)] = rgba;
+            }
+        }
+
+        return matrix;
+    }
+
+    fn to_rgba_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::<u8>::new();
+
+        for row in self.pixels.iter() {
+            for pixel in row.iter() {
+                // TODO: lookup table from palette
+                let rgba = pixel.to_rgba(HashMap::<usize, [u8; 4]>::new());
+                bytes.push(rgba[0]);
+                bytes.push(rgba[1]);
+                bytes.push(rgba[2]);
+                bytes.push(rgba[3]);
+            }
+        }
+
+        return bytes;
+    }
+
+    fn to_image(&self) -> image::RgbaImage {
+        let height = self.pixels.len();
+        let width = self.pixels.get(0).unwrap().len();
+        let image = image::RgbaImage::from_raw(width as u32, height as u32, self.to_rgba_bytes());
+
+        return image.unwrap();
     }
 }
 

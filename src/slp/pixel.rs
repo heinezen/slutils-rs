@@ -1,6 +1,8 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use std::fmt;
+use std::{collections::HashMap, fmt};
+
+use crate::util::pixel::RGBAConvertible;
 
 /// Pixel type in an SLP frame.
 pub enum SLPPixelType {
@@ -43,6 +45,19 @@ impl PalettePixel {
     /// New palette pixel.
     pub fn new(pixel_type: SLPPixelType, index: u8) -> Self {
         Self { pixel_type, index }
+    }
+}
+
+impl RGBAConvertible for PalettePixel {
+    fn to_rgba(&self, lookup: HashMap<usize, [u8; 4]>) -> [u8; 4] {
+        match self.pixel_type {
+            SLPPixelType::PALETTE => [self.index, self.index, self.index, 255],
+            SLPPixelType::TRANSPARENT => [0, 0, 0, 0],
+            SLPPixelType::SHADOW | SLPPixelType::SHADOWv4 => [0, 0, 0, 100],
+            SLPPixelType::PLAYER | SLPPixelType::PLAYERv4 => [0, self.index, 0, 254],
+            SLPPixelType::SPECIAL1 => [0, 0, 0, 252],
+            SLPPixelType::SPECIAL2 => [0, 0, 0, 250],
+        }
     }
 }
 

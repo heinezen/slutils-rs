@@ -4,6 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use std::fmt;
 use std::{io::Cursor, string::String};
 
+use super::definitions::SLP_VERSION_SIZE;
 use super::types::SLPVersion;
 use super::unpack::UnpackFixedSize;
 
@@ -40,7 +41,9 @@ impl SLPHeaderData {
 
 impl UnpackFixedSize for SLPHeaderData {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self {
-        let version: SLPVersion = buffer[offset..offset + 4].try_into().unwrap();
+        let version: SLPVersion = buffer[offset..offset + SLP_VERSION_SIZE]
+            .try_into()
+            .unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 4..offset + 8]);
         let num_frames: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
