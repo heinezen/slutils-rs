@@ -1,6 +1,7 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
 mod slp;
+mod util;
 
 use std::path::PathBuf;
 
@@ -10,5 +11,14 @@ pub fn parse_file(path: PathBuf) {
     let content = std::fs::read(path).expect("Failed to read file");
     let slp = parse_slp(content);
 
-    println!("{}", slp.header.version);
+    println!("{}", slp.header.to_string());
+    println!("---------------------");
+    for frame_info in slp.frame_infos {
+        println!("{}", frame_info.to_string());
+        println!("---------------------")
+    }
+    for frame_data in slp.frames {
+        println!("{}", frame_data.to_string());
+        println!("---------------------")
+    }
 }
