@@ -3,29 +3,50 @@
 use std::fmt;
 
 use super::definitions::SLP_FRAME_BOUNDS_SIZE;
+use super::definitions::SLP_FRAME_CMD_OFFSET_SIZE;
 use super::frame_info::SLPFrameInfo;
 use super::pixel::PalettePixel;
-use super::pixel::PixelType;
 use super::pixel::RGBAPixel;
+use super::pixel::SLPPixelType;
 use super::row_bound::SLPRowBound;
 use super::row_bound::SLPRowBoundData;
 use super::unpack::UnpackFixedSize;
 use super::unpack::UnpackFrameData;
 
+/// SLP frame data.
 pub struct SLPFrameData {
+    /// Bounds table data.
     bounds_table: Vec<SLPRowBoundData>,
+    /// Command table.
     cmd_table: Vec<u32>,
+    /// Row commands data.
     row_data: Vec<Vec<u8>>,
 }
 
+/// SLP frame.
 pub struct SLPFrame<T> {
+    /// Frame data.
     data: Option<SLPFrameData>,
+    /// Bounds table.
     bounds_table: Vec<SLPRowBound>,
+    /// Command table.
     cmd_table: Vec<u32>,
+    /// Pixels in the frame.
     pixels: Vec<Vec<T>>,
 }
 
 impl SLPFrame<PalettePixel> {
+    /// Create a new SLP frame.
+    ///
+    /// # Arguments
+    ///
+    /// * `bounds_table` - Bounds table.
+    /// * `cmd_table` - Command table.
+    /// * `row_data` - Row data.
+    ///
+    /// # Returns
+    ///
+    /// New SLP frame.
     pub fn new(
         bounds_table: Vec<SLPRowBound>,
         cmd_table: Vec<u32>,
@@ -40,6 +61,22 @@ impl SLPFrame<PalettePixel> {
     }
 }
 
+/// Get the number of pixels following certain row commands.
+///
+/// Commands 0x01, 0x06, 0x07, 0x0A, 0x0B store the number of pixels either in the command itself
+/// or in the next byte. If `cmd >> n` is not 0, this value is used. Otherwise, the next byte is
+/// used.
+///
+/// # Arguments
+///
+/// * `buffer` - The buffer to read from.
+/// * `cmd` - Row command.
+/// * `n` - Number of bits to shift the command to the right.
+/// * `pos` - Current position in the buffer.
+///
+/// # Returns
+///
+/// The number of pixels to read and the new position in the buffer.
 fn cmd_or_next(buffer: &[u8], cmd: u8, n: u8, pos: usize) -> (u8, usize) {
     let packed_in_cmd = cmd >> n;
 
@@ -75,7 +112,8 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
     fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<u32> {
         let mut row_offsets = Vec::<u32>::new();
         for j in 0..frame_info.data.height {
-            let offset: usize = frame_info.data.cmd_table_offset as usize + (j as usize) * 4;
+            let offset: usize = frame_info.data.cmd_table_offset as usize
+                + (j as usize) * SLP_FRAME_CMD_OFFSET_SIZE;
             let row = u32::from_le_bytes([
                 buffer[offset],
                 buffer[offset + 1],
@@ -120,24 +158,24 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
 
         if bounds.full_row {
             for _ in 0..expected_size {
-                row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+                row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
             }
             return row;
         }
 
-        for _ in 0..bounds.data.left {
-            row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+        for _ in 0..bounds.get_left() {
+            row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
         }
 
         let mut color_cmds = SLPFrame::<PalettePixel>::decode_row_cmds(
             buffer,
             first_cmd_offset,
-            expected_size - (bounds.data.left + bounds.data.right) as usize,
+            expected_size - (bounds.get_left() + bounds.get_right()) as usize,
         );
         row.append(&mut color_cmds);
 
-        for _ in 0..bounds.data.right {
-            row.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+        for _ in 0..bounds.get_right() {
+            row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
         }
 
         return row;
@@ -193,14 +231,14 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                     for _ in 0..pixel_count {
                         dpos += 1;
                         color = buffer.get(dpos).unwrap().clone();
-                        pixels.push(PalettePixel::new(PixelType::PALETTE, color));
+                        pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
                     }
                 }
                 // Lesser skip
                 0b0000_0001 => {
                     (count, dpos) = cmd_or_next(buffer, cmd, 2, dpos);
                     for _ in 0..count {
-                        pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+                        pixels.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
                     }
                 }
                 _ => {
@@ -214,7 +252,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             for _ in 0..pixel_count {
                                 dpos += 1;
                                 color = buffer.get(dpos).unwrap().clone();
-                                pixels.push(PalettePixel::new(PixelType::PALETTE, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
                             }
                         }
                         // Big skip
@@ -224,7 +262,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
 
                             for _ in 0..pixel_count {
-                                pixels.push(PalettePixel::new(PixelType::TRANSPARENT, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
                             }
                         }
                         // Player color
@@ -234,7 +272,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                                 dpos += 1;
                                 color = buffer.get(dpos).unwrap().clone();
 
-                                pixels.push(PalettePixel::new(PixelType::PLAYER, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::PLAYER, color));
                             }
                         }
                         // fill palette color
@@ -245,7 +283,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             color = buffer.get(dpos).unwrap().clone();
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(PixelType::PALETTE, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
                             }
                         }
                         // fill player color
@@ -256,7 +294,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             color = buffer.get(dpos).unwrap().clone();
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(PixelType::PLAYER, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::PLAYER, color));
                             }
                         }
                         // shadow fill
@@ -264,7 +302,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(PixelType::SHADOW, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::SHADOW, 0));
                             }
                         }
                         // Extended command
@@ -279,7 +317,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             0x30 => {}
                             // outline 1 draw
                             0x40 => {
-                                pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::SPECIAL1, 0));
                             }
                             // outline 1 multi draw
                             0x50 => {
@@ -287,12 +325,12 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                                 pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                                 for _ in 0..pixel_count {
-                                    pixels.push(PalettePixel::new(PixelType::SPECIAL1, 0));
+                                    pixels.push(PalettePixel::new(SLPPixelType::SPECIAL1, 0));
                                 }
                             }
                             // outline 2 draw
                             0x60 => {
-                                pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::SPECIAL2, 0));
                             }
                             // outline 2 multi draw
                             0x70 => {
@@ -300,7 +338,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                                 pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                                 for _ in 0..pixel_count {
-                                    pixels.push(PalettePixel::new(PixelType::SPECIAL2, 0));
+                                    pixels.push(PalettePixel::new(SLPPixelType::SPECIAL2, 0));
                                 }
                             }
                             // dither
@@ -339,7 +377,10 @@ impl fmt::Display for SLPFrame<PalettePixel> {
 
             let row = format!(
                 "| {:<5} | {:<#12x} | {:>4} / {:<12} |\n",
-                i, start_offset, bounds.data.left, bounds.data.right
+                i,
+                start_offset,
+                bounds.get_left(),
+                bounds.get_right()
             );
             out.push_str(row.as_str());
         }
@@ -371,7 +412,10 @@ impl fmt::Display for SLPFrame<RGBAPixel> {
 
             let row = format!(
                 "| {:<5} | {:<#12x} | {:>4} / {:<13} |\n",
-                i, start_offset, bounds.data.left, bounds.data.right
+                i,
+                start_offset,
+                bounds.get_left(),
+                bounds.get_right()
             );
             out.push_str(row.as_str());
         }

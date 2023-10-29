@@ -16,7 +16,7 @@ pub fn parse_file(path: PathBuf) {
         println!("{}", frame_info.to_string());
         println!("---------------------")
     }
-    for frame_data in slp.frame_datas {
+    for frame_data in slp.frames {
         println!("{}", frame_data.to_string());
         println!("---------------------")
     }

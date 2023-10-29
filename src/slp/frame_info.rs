@@ -6,32 +6,58 @@ use std::io::Cursor;
 
 use crate::slp::unpack::UnpackFixedSize;
 
-pub enum FrameType {
+/// SLP frame type.
+pub enum SLPFrameType {
     MAIN,
     SHADOW,
 }
 
-impl fmt::Display for FrameType {
+impl fmt::Display for SLPFrameType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FrameType::MAIN => write!(f, "MAIN"),
-            FrameType::SHADOW => write!(f, "SHADOW"),
+            SLPFrameType::MAIN => write!(f, "MAIN"),
+            SLPFrameType::SHADOW => write!(f, "SHADOW"),
         }
     }
 }
 
+/// Frame info data in an SLP file.
 pub struct SLPFrameInfoData {
+    /// Offset of the command table.
     pub cmd_table_offset: u32,
+    /// Offset of the bounds table.
     pub bounds_table_offset: u32,
+    /// Offset of the palette.
     palette_offset: u32,
+    /// Properties.
     properties: u32,
+    /// Width of the frame.
     pub width: i32,
+    /// Height of the frame.
     pub height: i32,
+    /// X coordinate of the hotspot.
     hotspot_x: i32,
+    /// Y coordinate of the hotspot.
     hotspot_y: i32,
 }
 
 impl SLPFrameInfoData {
+    /// Create a new SLP frame info.
+    ///
+    /// # Arguments
+    ///
+    /// * `cmd_table_offset` - Offset of the command table.
+    /// * `bounds_table_offset` - Offset of the bounds table.
+    /// * `palette_offset` - Offset of the palette.
+    /// * `properties` - Properties.
+    /// * `width` - Width of the frame.
+    /// * `height` - Height of the frame.
+    /// * `hotspot_x` - X coordinate of the hotspot.
+    /// * `hotspot_y` - Y coordinate of the hotspot.
+    ///
+    /// # Returns
+    ///
+    /// New SLP frame info.
     pub fn new(
         cmd_table_offset: u32,
         bounds_table_offset: u32,
@@ -148,13 +174,35 @@ impl fmt::Display for SLPFrameInfoData {
     }
 }
 
+/// Frame info in an SLP file.
 pub struct SLPFrameInfo {
+    /// Frame info data.
     pub data: SLPFrameInfoData,
-    pub frame_type: FrameType,
+    /// Frame type.
+    pub frame_type: SLPFrameType,
+    /// SLP version.
     pub slp_version: [u8; 4],
 }
 
 impl SLPFrameInfo {
+    /// Create a new SLP frame info.
+    ///
+    /// # Arguments
+    ///
+    /// * `cmd_table_offset` - Offset of the command table.
+    /// * `bounds_table_offset` - Offset of the bounds table.
+    /// * `palette_offset` - Offset of the palette.
+    /// * `properties` - Properties.
+    /// * `width` - Width of the frame.
+    /// * `height` - Height of the frame.
+    /// * `hotspot_x` - X coordinate of the hotspot.
+    /// * `hotspot_y` - Y coordinate of the hotspot.
+    /// * `frame_type` - Frame type.
+    /// * `slp_version` - SLP version.
+    ///
+    /// # Returns
+    ///
+    /// New SLP frame info.
     pub fn new(
         cmd_table_offset: u32,
         bounds_table_offset: u32,
@@ -164,7 +212,7 @@ impl SLPFrameInfo {
         height: i32,
         hotspot_x: i32,
         hotspot_y: i32,
-        frame_type: FrameType,
+        frame_type: SLPFrameType,
         slp_version: [u8; 4],
     ) -> Self {
         Self {
@@ -183,7 +231,22 @@ impl SLPFrameInfo {
         }
     }
 
-    pub fn from_data(data: SLPFrameInfoData, frame_type: FrameType, slp_version: [u8; 4]) -> Self {
+    /// Create a new SLP frame info from existing frame info data.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - Frame info data.
+    /// * `frame_type` - Frame type.
+    /// * `slp_version` - SLP version.
+    ///
+    /// # Returns
+    ///
+    /// New SLP frame info.
+    pub fn from_data(
+        data: SLPFrameInfoData,
+        frame_type: SLPFrameType,
+        slp_version: [u8; 4],
+    ) -> Self {
         Self {
             data,
             frame_type,

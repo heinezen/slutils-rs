@@ -3,36 +3,51 @@
 use super::definitions::SLP_FRAME_INFO_SIZE;
 use super::definitions::SLP_HEADER_SIZE;
 use super::frame::SLPFrame;
-use super::frame_info::FrameType;
 use super::frame_info::SLPFrameInfo;
 use super::frame_info::SLPFrameInfoData;
+use super::frame_info::SLPFrameType;
 use super::header::SLPHeader;
+use super::header::SLPHeaderData;
 use super::pixel::PalettePixel;
 use super::unpack::UnpackFixedSize;
 use super::unpack::UnpackFrameData;
 
+/// SLP file.
 pub struct SLPFile {
+    /// SLP header.
     pub header: SLPHeader,
+    /// SLP frame infos.
     pub frame_infos: Vec<SLPFrameInfo>,
-    pub frame_datas: Vec<SLPFrame<PalettePixel>>,
+    /// SLP frames.
+    pub frames: Vec<SLPFrame<PalettePixel>>,
 }
 
+/// Parse a single SLP file.
+///
+/// # Arguments
+///
+/// * `bytes` - The bytes of the SLP file.
+///
+/// # Returns
+///
+/// The parsed SLP file.
 pub fn parse_slp(bytes: Vec<u8>) -> SLPFile {
-    let header = SLPHeader::from_buffer(&bytes, 0);
+    let header_data = SLPHeaderData::from_buffer(&bytes, 0);
+    let header = SLPHeader::from_data(header_data);
 
     let mut frame_infos = Vec::<SLPFrameInfo>::new();
-    for i in 0..header.num_frames {
+    for i in 0..header.get_num_frames() {
         let offset = SLP_HEADER_SIZE + (i as usize) * SLP_FRAME_INFO_SIZE;
         let info_data = SLPFrameInfoData::from_buffer(&bytes, offset);
         frame_infos.push(SLPFrameInfo::from_data(
             info_data,
-            FrameType::MAIN,
-            header.version,
+            SLPFrameType::MAIN,
+            header.data.version,
         ));
     }
 
     let mut frame_datas = Vec::<SLPFrame<PalettePixel>>::new();
-    for i in 0..header.num_frames {
+    for i in 0..header.get_num_frames() {
         let frame_info = frame_infos.get(i as usize).unwrap();
         let frame = SLPFrame::from_buffer(&bytes, frame_info);
         frame_datas.push(frame);
@@ -41,6 +56,6 @@ pub fn parse_slp(bytes: Vec<u8>) -> SLPFile {
     SLPFile {
         header,
         frame_infos,
-        frame_datas,
+        frames: frame_datas,
     }
 }

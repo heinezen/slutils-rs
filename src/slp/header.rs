@@ -6,35 +6,38 @@ use std::{io::Cursor, string::String};
 
 use crate::slp::unpack::UnpackFixedSize;
 
-pub struct SLPHeader {
+/// Header data in an SLP file.
+pub struct SLPHeaderData {
+    /// Version string.
     pub version: [u8; 4],
+    /// Number of frames.
     pub num_frames: u32,
+    /// Comment string.
     pub comment: [u8; 24],
 }
 
-impl SLPHeader {
-    pub fn new(version: [u8; 4], num_frames: u32, comment: [u8; 24]) -> SLPHeader {
-        SLPHeader {
+impl SLPHeaderData {
+    /// Create a new SLP header.
+    ///
+    /// # Arguments
+    ///
+    /// * `version` - Version string.
+    /// * `num_frames` - Number of frames.
+    /// * `comment` - Comment string.
+    ///
+    /// # Returns
+    ///
+    /// New SLP header.
+    pub fn new(version: [u8; 4], num_frames: u32, comment: [u8; 24]) -> SLPHeaderData {
+        SLPHeaderData {
             version,
             num_frames,
             comment,
         }
     }
-
-    pub fn get_version(&self) -> String {
-        return String::from_utf8(self.version.to_vec()).unwrap();
-    }
-
-    pub fn get_num_frames(&self) -> u32 {
-        return self.num_frames;
-    }
-
-    pub fn get_comment(&self) -> String {
-        return String::from_utf8(self.comment.to_vec()).unwrap();
-    }
 }
 
-impl UnpackFixedSize for SLPHeader {
+impl UnpackFixedSize for SLPHeaderData {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self {
         let version: [u8; 4] = buffer[offset..offset + 4].try_into().unwrap();
 
@@ -43,7 +46,7 @@ impl UnpackFixedSize for SLPHeader {
 
         let comment: [u8; 24] = buffer[offset + 8..offset + 32].try_into().unwrap();
 
-        return SLPHeader::new(version, num_frames, comment);
+        return SLPHeaderData::new(version, num_frames, comment);
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
@@ -54,7 +57,72 @@ impl UnpackFixedSize for SLPHeader {
 
         let comment = bytes[8..32].try_into().unwrap();
 
-        return SLPHeader::new(version, num_frames, comment);
+        return SLPHeaderData::new(version, num_frames, comment);
+    }
+}
+
+/// Header in an SLP file.
+pub struct SLPHeader {
+    /// Header data.
+    pub data: SLPHeaderData,
+}
+
+impl SLPHeader {
+    /// Create a new SLP header.
+    ///
+    /// # Arguments
+    ///
+    /// * `version` - Version string.
+    /// * `num_frames` - Number of frames.
+    /// * `comment` - Comment string.
+    ///
+    /// # Returns
+    ///
+    /// New SLP header.
+    pub fn new(version: [u8; 4], num_frames: u32, comment: [u8; 24]) -> Self {
+        Self {
+            data: SLPHeaderData::new(version, num_frames, comment),
+        }
+    }
+
+    /// Create a new SLP header from existing header data.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - Header data.
+    ///
+    /// # Returns
+    ///
+    /// New SLP header.
+    pub fn from_data(data: SLPHeaderData) -> Self {
+        Self { data }
+    }
+
+    /// Get the version string.
+    ///
+    /// # Returns
+    ///
+    /// Version string.
+    pub fn get_version(&self) -> String {
+        return String::from_utf8(self.data.version.to_vec()).unwrap();
+    }
+
+    /// Get the number of frames.
+    ///
+    /// # Returns
+    ///
+    /// Number of frames.
+    pub fn get_num_frames(&self) -> u32 {
+        return self.data.num_frames;
+    }
+
+    /// Get the comment string.
+    ///
+    /// # Returns
+    ///
+    /// Comment string.
+    pub fn get_comment(&self) -> String {
+        return String::from_utf8(self.data.comment.to_vec()).unwrap();
     }
 }
 
@@ -70,7 +138,7 @@ impl fmt::Display for SLPHeader {
     }
 }
 
-pub struct SLP4Header {
+pub struct SLP4HeaderData {
     version: [u8; 4],
     num_frames: u16,
     frame_type: u16,
@@ -82,7 +150,7 @@ pub struct SLP4Header {
     pad: [u8; 8],
 }
 
-impl SLP4Header {
+impl SLP4HeaderData {
     pub fn new(
         version: [u8; 4],
         num_frames: u16,
@@ -93,8 +161,8 @@ impl SLP4Header {
         offset_main: u32,
         offset_secondary: u32,
         pad: [u8; 8],
-    ) -> SLP4Header {
-        SLP4Header {
+    ) -> SLP4HeaderData {
+        SLP4HeaderData {
             version,
             num_frames,
             frame_type,
