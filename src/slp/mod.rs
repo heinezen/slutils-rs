@@ -7,4 +7,5 @@ mod header;
 mod pixel;
 mod row_bound;
 pub mod slp;
+mod types;
 pub mod unpack;

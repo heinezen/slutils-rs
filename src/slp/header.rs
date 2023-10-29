@@ -4,12 +4,13 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use std::fmt;
 use std::{io::Cursor, string::String};
 
-use crate::slp::unpack::UnpackFixedSize;
+use super::types::SLPVersion;
+use super::unpack::UnpackFixedSize;
 
 /// Header data in an SLP file.
 pub struct SLPHeaderData {
     /// Version string.
-    pub version: [u8; 4],
+    pub version: SLPVersion,
     /// Number of frames.
     pub num_frames: u32,
     /// Comment string.
@@ -28,7 +29,7 @@ impl SLPHeaderData {
     /// # Returns
     ///
     /// New SLP header.
-    pub fn new(version: [u8; 4], num_frames: u32, comment: [u8; 24]) -> SLPHeaderData {
+    pub fn new(version: SLPVersion, num_frames: u32, comment: [u8; 24]) -> SLPHeaderData {
         SLPHeaderData {
             version,
             num_frames,
@@ -39,7 +40,7 @@ impl SLPHeaderData {
 
 impl UnpackFixedSize for SLPHeaderData {
     fn from_buffer(buffer: &[u8], offset: usize) -> Self {
-        let version: [u8; 4] = buffer[offset..offset + 4].try_into().unwrap();
+        let version: SLPVersion = buffer[offset..offset + 4].try_into().unwrap();
 
         let mut byte_reader = Cursor::new(&buffer[offset + 4..offset + 8]);
         let num_frames: u32 = byte_reader.read_u32::<LittleEndian>().unwrap();
@@ -79,7 +80,7 @@ impl SLPHeader {
     /// # Returns
     ///
     /// New SLP header.
-    pub fn new(version: [u8; 4], num_frames: u32, comment: [u8; 24]) -> Self {
+    pub fn new(version: SLPVersion, num_frames: u32, comment: [u8; 24]) -> Self {
         Self {
             data: SLPHeaderData::new(version, num_frames, comment),
         }
@@ -139,7 +140,7 @@ impl fmt::Display for SLPHeader {
 }
 
 pub struct SLP4HeaderData {
-    version: [u8; 4],
+    version: SLPVersion,
     num_frames: u16,
     frame_type: u16,
     num_directions: u16,
@@ -152,7 +153,7 @@ pub struct SLP4HeaderData {
 
 impl SLP4HeaderData {
     pub fn new(
-        version: [u8; 4],
+        version: SLPVersion,
         num_frames: u16,
         frame_type: u16,
         num_directions: u16,

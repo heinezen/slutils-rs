@@ -6,6 +6,8 @@ use std::io::Cursor;
 
 use crate::slp::unpack::UnpackFixedSize;
 
+use super::types::SLPVersion;
+
 /// SLP frame type.
 pub enum SLPFrameType {
     MAIN,
@@ -181,7 +183,7 @@ pub struct SLPFrameInfo {
     /// Frame type.
     pub frame_type: SLPFrameType,
     /// SLP version.
-    pub slp_version: [u8; 4],
+    pub slp_version: SLPVersion,
 }
 
 impl SLPFrameInfo {
@@ -213,7 +215,7 @@ impl SLPFrameInfo {
         hotspot_x: i32,
         hotspot_y: i32,
         frame_type: SLPFrameType,
-        slp_version: [u8; 4],
+        slp_version: SLPVersion,
     ) -> Self {
         Self {
             data: SLPFrameInfoData::new(
@@ -245,7 +247,7 @@ impl SLPFrameInfo {
     pub fn from_data(
         data: SLPFrameInfoData,
         frame_type: SLPFrameType,
-        slp_version: [u8; 4],
+        slp_version: SLPVersion,
     ) -> Self {
         Self {
             data,

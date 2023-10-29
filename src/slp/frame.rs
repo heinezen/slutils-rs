@@ -10,6 +10,7 @@ use super::pixel::RGBAPixel;
 use super::pixel::SLPPixelType;
 use super::row_bound::SLPRowBound;
 use super::row_bound::SLPRowBoundData;
+use super::types::SLPRowOffset;
 use super::unpack::UnpackFixedSize;
 use super::unpack::UnpackFrameData;
 
@@ -18,7 +19,7 @@ pub struct SLPFrameData {
     /// Bounds table data.
     bounds_table: Vec<SLPRowBoundData>,
     /// Command table.
-    cmd_table: Vec<u32>,
+    cmd_table: Vec<SLPRowOffset>,
     /// Row commands data.
     row_data: Vec<Vec<u8>>,
 }
@@ -30,7 +31,7 @@ pub struct SLPFrame<T> {
     /// Bounds table.
     bounds_table: Vec<SLPRowBound>,
     /// Command table.
-    cmd_table: Vec<u32>,
+    cmd_table: Vec<SLPRowOffset>,
     /// Pixels in the frame.
     pixels: Vec<Vec<T>>,
 }
@@ -49,7 +50,7 @@ impl SLPFrame<PalettePixel> {
     /// New SLP frame.
     pub fn new(
         bounds_table: Vec<SLPRowBound>,
-        cmd_table: Vec<u32>,
+        cmd_table: Vec<SLPRowOffset>,
         row_data: Vec<Vec<PalettePixel>>,
     ) -> Self {
         Self {
@@ -109,7 +110,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         return bounds_table;
     }
 
-    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<u32> {
+    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPRowOffset> {
         let mut row_offsets = Vec::<u32>::new();
         for j in 0..frame_info.data.height {
             let offset: usize = frame_info.data.cmd_table_offset as usize
@@ -129,7 +130,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         buffer: &[u8],
         frame_info: &SLPFrameInfo,
         bounds_table: &Vec<SLPRowBound>,
-        cmd_table: &Vec<u32>,
+        cmd_table: &Vec<SLPRowOffset>,
     ) -> Vec<Vec<PalettePixel>> {
         let mut row_data = Vec::<Vec<PalettePixel>>::new();
         for i in 0..frame_info.data.height {

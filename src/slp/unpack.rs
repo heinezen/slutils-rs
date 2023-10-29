@@ -2,6 +2,7 @@
 
 use super::frame_info::SLPFrameInfo;
 use super::row_bound::SLPRowBound;
+use super::types::SLPRowOffset;
 
 /// Unpack a fixed size object in a file.
 pub trait UnpackFixedSize {
@@ -72,7 +73,7 @@ pub trait UnpackFrameData<T> {
     /// # Returns
     ///
     /// List of command offsets.
-    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<u32>;
+    fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPRowOffset>;
 
     /// Decode the draw commands in the frame data.
     ///
@@ -88,7 +89,7 @@ pub trait UnpackFrameData<T> {
         buffer: &[u8],
         frame_info: &SLPFrameInfo,
         bounds_table: &Vec<SLPRowBound>,
-        cmd_table: &Vec<u32>,
+        cmd_table: &Vec<SLPRowOffset>,
     ) -> Vec<Vec<T>>;
 
     /// Decode a single row in the frame.
