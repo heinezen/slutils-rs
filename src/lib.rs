@@ -1,6 +1,7 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
 mod slp;
+mod util;
 
 use std::path::PathBuf;
 
