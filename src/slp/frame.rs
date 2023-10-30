@@ -86,35 +86,36 @@ impl SLPFrame<PalettePixel> {
 fn cmd_or_next(buffer: &[u8], cmd: u8, n: u8, pos: usize) -> (u8, usize) {
     let packed_in_cmd = cmd >> n;
 
-    if packed_in_cmd != 0 {
-        return (packed_in_cmd, pos);
-    } else {
+    if packed_in_cmd == 0 {
         let next = pos + 1;
-        return (buffer[next], next);
+        (buffer[next], next)
+    } else {
+        (packed_in_cmd, pos)
     }
 }
 
 impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
     fn from_buffer(buffer: &[u8], frame_info: &SLPFrameInfo) -> Self {
-        let bounds_table = SLPFrame::<PalettePixel>::decode_bounds_table(buffer, frame_info);
-        let cmd_table = SLPFrame::<PalettePixel>::decode_cmd_table(buffer, frame_info);
-        let row_data =
-            SLPFrame::<PalettePixel>::decode_frame(buffer, frame_info, &bounds_table, &cmd_table);
+        let bounds_table = Self::decode_bounds_table(buffer, frame_info);
+        let cmd_table = Self::decode_cmd_table(buffer, frame_info);
+        let row_data = Self::decode_frame(buffer, frame_info, &bounds_table, &cmd_table);
 
-        return SLPFrame::new(bounds_table, cmd_table, row_data);
+        Self::new(bounds_table, cmd_table, row_data)
     }
 
+    // FIXME: This should return a result and use usize::try_from
     fn decode_bounds_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPRowBound> {
         let mut bounds_table = Vec::<SLPRowBound>::new();
         for j in 0..frame_info.data.height {
             let offset =
                 frame_info.data.bounds_table_offset as usize + (j as usize) * SLP_FRAME_BOUNDS_SIZE;
-            let bounds = SLPRowBound::from_buffer(&buffer, offset);
+            let bounds = SLPRowBound::from_buffer(buffer, offset);
             bounds_table.push(bounds);
         }
-        return bounds_table;
+        bounds_table
     }
 
+    // FIXME: This should return a result and use usize::try_from
     fn decode_cmd_table(buffer: &[u8], frame_info: &SLPFrameInfo) -> Vec<SLPRowOffset> {
         let mut row_offsets = Vec::<u32>::new();
         for j in 0..frame_info.data.height {
@@ -128,21 +129,22 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             ]);
             row_offsets.push(row);
         }
-        return row_offsets;
+        row_offsets
     }
 
+    // FIXME: This should return a result and use usize::try_from
     fn decode_frame(
         buffer: &[u8],
         frame_info: &SLPFrameInfo,
-        bounds_table: &Vec<SLPRowBound>,
-        cmd_table: &Vec<SLPRowOffset>,
+        bounds_table: &[SLPRowBound],
+        cmd_table: &[SLPRowOffset],
     ) -> Vec<Vec<PalettePixel>> {
         let mut row_data = Vec::<Vec<PalettePixel>>::new();
         for i in 0..frame_info.data.height {
             let row_offset = cmd_table.get(i as usize).unwrap();
             let bounds = bounds_table.get(i as usize).unwrap();
 
-            let row = SLPFrame::<PalettePixel>::decode_row(
+            let row = Self::decode_row(
                 buffer,
                 bounds,
                 *row_offset as usize,
@@ -151,7 +153,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             row_data.push(row);
         }
 
-        return row_data;
+        row_data
     }
 
     fn decode_row(
@@ -164,16 +166,16 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
 
         if bounds.full_row {
             for _ in 0..expected_size {
-                row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
+                row.push(PalettePixel::new(SLPPixelType::Transparent, 0));
             }
             return row;
         }
 
         for _ in 0..bounds.get_left() {
-            row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
+            row.push(PalettePixel::new(SLPPixelType::Transparent, 0));
         }
 
-        let mut color_cmds = SLPFrame::<PalettePixel>::decode_row_cmds(
+        let mut color_cmds = Self::decode_row_cmds(
             buffer,
             first_cmd_offset,
             expected_size - (bounds.get_left() + bounds.get_right()) as usize,
@@ -181,10 +183,10 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         row.append(&mut color_cmds);
 
         for _ in 0..bounds.get_right() {
-            row.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
+            row.push(PalettePixel::new(SLPPixelType::Transparent, 0));
         }
 
-        return row;
+        row
     }
 
     fn decode_row_cmds(
@@ -209,16 +211,15 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         let mut eor: bool = false;
 
         while !eor {
-            if pixels.len() > expected_size {
-                panic!(
-                    "Expected {} pixels, but read {} without reaching end or row. dpos = {:#x}",
-                    expected_size,
-                    pixels.len(),
-                    dpos
-                );
-            }
+            assert!(
+                pixels.len() <= expected_size,
+                "Expected {} pixels, but read {} without reaching end or row. dpos = {:#x}",
+                expected_size,
+                pixels.len(),
+                dpos
+            );
 
-            cmd = buffer.get(dpos).unwrap().clone();
+            cmd = *buffer.get(dpos).unwrap();
 
             lower_nibble = cmd & 0x0F;
             higher_nibble = cmd & 0xF0;
@@ -236,15 +237,15 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                     pixel_count = (cmd >> 2) as u32;
                     for _ in 0..pixel_count {
                         dpos += 1;
-                        color = buffer.get(dpos).unwrap().clone();
-                        pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
+                        color = *buffer.get(dpos).unwrap();
+                        pixels.push(PalettePixel::new(SLPPixelType::Palette, color));
                     }
                 }
                 // Lesser skip
                 0b0000_0001 => {
                     (count, dpos) = cmd_or_next(buffer, cmd, 2, dpos);
                     for _ in 0..count {
-                        pixels.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
+                        pixels.push(PalettePixel::new(SLPPixelType::Transparent, 0));
                     }
                 }
                 _ => {
@@ -252,23 +253,23 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                         // Big draw
                         0x02 => {
                             dpos += 1;
-                            nextbyte = buffer.get(dpos).unwrap().clone();
+                            nextbyte = *buffer.get(dpos).unwrap();
                             pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
 
                             for _ in 0..pixel_count {
                                 dpos += 1;
-                                color = buffer.get(dpos).unwrap().clone();
-                                pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
+                                color = *buffer.get(dpos).unwrap();
+                                pixels.push(PalettePixel::new(SLPPixelType::Palette, color));
                             }
                         }
                         // Big skip
                         0x03 => {
                             dpos += 1;
-                            nextbyte = buffer.get(dpos).unwrap().clone();
+                            nextbyte = *buffer.get(dpos).unwrap();
                             pixel_count = ((higher_nibble << 4) + nextbyte) as u32;
 
                             for _ in 0..pixel_count {
-                                pixels.push(PalettePixel::new(SLPPixelType::TRANSPARENT, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::Transparent, 0));
                             }
                         }
                         // Player color
@@ -276,9 +277,9 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
                             for _ in 0..count {
                                 dpos += 1;
-                                color = buffer.get(dpos).unwrap().clone();
+                                color = *buffer.get(dpos).unwrap();
 
-                                pixels.push(PalettePixel::new(SLPPixelType::PLAYER, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::Player, color));
                             }
                         }
                         // fill palette color
@@ -289,7 +290,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             color = buffer.get(dpos).unwrap().clone();
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(SLPPixelType::PALETTE, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::Palette, color));
                             }
                         }
                         // fill player color
@@ -300,7 +301,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             color = buffer.get(dpos).unwrap().clone();
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(SLPPixelType::PLAYER, color));
+                                pixels.push(PalettePixel::new(SLPPixelType::Player, color));
                             }
                         }
                         // shadow fill
@@ -308,7 +309,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             (count, dpos) = cmd_or_next(buffer, cmd, 4, dpos);
 
                             for _ in 0..count {
-                                pixels.push(PalettePixel::new(SLPPixelType::SHADOW, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::Shadow, 0));
                             }
                         }
                         // Extended command
@@ -323,7 +324,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             0x30 => {}
                             // outline 1 draw
                             0x40 => {
-                                pixels.push(PalettePixel::new(SLPPixelType::SPECIAL1, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::Special1, 0));
                             }
                             // outline 1 multi draw
                             0x50 => {
@@ -331,12 +332,12 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                                 pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                                 for _ in 0..pixel_count {
-                                    pixels.push(PalettePixel::new(SLPPixelType::SPECIAL1, 0));
+                                    pixels.push(PalettePixel::new(SLPPixelType::Special1, 0));
                                 }
                             }
                             // outline 2 draw
                             0x60 => {
-                                pixels.push(PalettePixel::new(SLPPixelType::SPECIAL2, 0));
+                                pixels.push(PalettePixel::new(SLPPixelType::Special2, 0));
                             }
                             // outline 2 multi draw
                             0x70 => {
@@ -344,7 +345,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                                 pixel_count = buffer.get(dpos).unwrap().clone() as u32;
 
                                 for _ in 0..pixel_count {
-                                    pixels.push(PalettePixel::new(SLPPixelType::SPECIAL2, 0));
+                                    pixels.push(PalettePixel::new(SLPPixelType::Special2, 0));
                                 }
                             }
                             // dither
@@ -354,11 +355,10 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
                             // original alpha
                             0xA0 => {}
                             _ => panic!(
-                                "Unknown extended slp draw command: {:#x} at dpos {:#x}",
-                                cmd, dpos
+                                "Unknown extended slp draw command: {cmd:#x} at dpos {dpos:#x}"
                             ),
                         },
-                        _ => panic!("Unknown slp draw command: {:#x} at dpos {:#x}", cmd, dpos),
+                        _ => panic!("Unknown slp draw command: {cmd:#} at dpos {dpos:#}"),
                     }
                 }
             }
@@ -434,17 +434,17 @@ impl fmt::Display for SLPFrame<PalettePixel> {
             out.push_str(row.as_str());
         }
 
-        for row in self.pixels.iter() {
+        self.pixels.iter().for_each(|row| {
             out.push_str(
                 row.iter()
-                    .map(|p| format!("{}", p))
+                    .map(|p| format!("{p}"))
                     .collect::<String>()
                     .as_str(),
             );
             out.push_str("\n");
-        }
+        });
 
-        write!(f, "{}", out)
+        write!(f, "{out}")
     }
 }
 

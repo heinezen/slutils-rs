@@ -41,7 +41,7 @@ pub fn parse_slp(bytes: Vec<u8>) -> SLPFile {
         let info_data = SLPFrameInfoData::from_buffer(&bytes, offset);
         frame_infos.push(SLPFrameInfo::from_data(
             info_data,
-            SLPFrameType::MAIN,
+            SLPFrameType::Main,
             header.data.version,
         ));
     }

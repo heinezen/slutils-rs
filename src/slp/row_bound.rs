@@ -67,12 +67,12 @@ impl SLPRowBound {
         Self { data, full_row }
     }
 
-    pub fn get_left(&self) -> u16 {
-        return self.data.left;
+    pub const fn get_left(&self) -> u16 {
+        self.data.left
     }
 
-    pub fn get_right(&self) -> u16 {
-        return self.data.right;
+    pub const fn get_right(&self) -> u16 {
+        self.data.right
     }
 }
 
@@ -83,10 +83,10 @@ impl UnpackFixedSize for SLPRowBound {
 
         if left == 0x8000 || right == 0x8000 {
             // row is completely transparent
-            return SLPRowBound::new(0, 0, true);
+            return Self::new(0, 0, true);
         }
 
-        return SLPRowBound::new(left, right, false);
+        Self::new(left, right, false)
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
@@ -95,9 +95,9 @@ impl UnpackFixedSize for SLPRowBound {
 
         if left == 0x8000 || right == 0x8000 {
             // row is completely transparent
-            return SLPRowBound::new(0, 0, true);
+            return Self::new(0, 0, true);
         }
 
-        return SLPRowBound::new(left, right, false);
+        Self::new(left, right, false)
     }
 }

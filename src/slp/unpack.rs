@@ -88,8 +88,8 @@ pub trait UnpackFrameData<T> {
     fn decode_frame(
         buffer: &[u8],
         frame_info: &SLPFrameInfo,
-        bounds_table: &Vec<SLPRowBound>,
-        cmd_table: &Vec<SLPRowOffset>,
+        bounds_table: &[SLPRowBound],
+        cmd_table: &[SLPRowOffset],
     ) -> Vec<Vec<T>>;
 
     /// Decode a single row in the frame.

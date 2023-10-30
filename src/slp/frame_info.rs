@@ -10,15 +10,15 @@ use super::types::SLPVersion;
 
 /// SLP frame type.
 pub enum SLPFrameType {
-    MAIN,
-    SHADOW,
+    Main,
+    Shadow,
 }
 
 impl fmt::Display for SLPFrameType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SLPFrameType::MAIN => write!(f, "MAIN"),
-            SLPFrameType::SHADOW => write!(f, "SHADOW"),
+            Self::Main => write!(f, "MAIN"),
+            Self::Shadow => write!(f, "SHADOW"),
         }
     }
 }
@@ -60,7 +60,7 @@ impl SLPFrameInfoData {
     /// # Returns
     ///
     /// New SLP frame info.
-    pub fn new(
+    pub const fn new(
         cmd_table_offset: u32,
         bounds_table_offset: u32,
         palette_offset: u32,
@@ -109,7 +109,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let mut byte_reader = Cursor::new(&buffer[offset + 28..offset + 32]);
         let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        return SLPFrameInfoData::new(
+        Self::new(
             cmd_table_offset,
             bounds_table_offset,
             palette_offset,
@@ -118,7 +118,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
             height,
             anchor_x,
             anchor_y,
-        );
+        )
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
@@ -146,7 +146,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let mut byte_reader = Cursor::new(&bytes[28..32]);
         let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        return SLPFrameInfoData::new(
+        Self::new(
             cmd_table_offset,
             bounds_table_offset,
             palette_offset,
@@ -155,7 +155,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
             height,
             anchor_x,
             anchor_y,
-        );
+        )
     }
 }
 
@@ -218,7 +218,7 @@ impl SLPFrameInfo {
         slp_version: SLPVersion,
     ) -> Self {
         Self {
-            data: SLPFrameInfoData::new(
+            data: SLPFrameInfoData {
                 cmd_table_offset,
                 bounds_table_offset,
                 palette_offset,
@@ -227,7 +227,7 @@ impl SLPFrameInfo {
                 height,
                 anchor_x,
                 anchor_y,
-            ),
+            },
             frame_type,
             slp_version,
         }
@@ -244,7 +244,7 @@ impl SLPFrameInfo {
     /// # Returns
     ///
     /// New SLP frame info.
-    pub fn from_data(
+    pub const fn from_data(
         data: SLPFrameInfoData,
         frame_type: SLPFrameType,
         slp_version: SLPVersion,
