@@ -441,7 +441,7 @@ impl fmt::Display for SLPFrame<PalettePixel> {
                     .collect::<String>()
                     .as_str(),
             );
-            out.push_str("\n");
+            out.push('\n');
         });
 
         write!(f, "{out}")
