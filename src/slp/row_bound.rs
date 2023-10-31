@@ -1,6 +1,6 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use super::unpack::UnpackFixedSize;
+use crate::slp::unpack::UnpackFixedSize;
 
 /// Bounds data for a row in an SLP frame.
 pub struct SLPRowBoundData {

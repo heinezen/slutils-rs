@@ -7,17 +7,17 @@ use crate::util::image::RGBAImageConvertible;
 use crate::util::matrix::Matrix2D;
 use crate::util::pixel::RGBAConvertible;
 
-use super::definitions::SLP_FRAME_BOUNDS_SIZE;
-use super::definitions::SLP_FRAME_CMD_OFFSET_SIZE;
-use super::frame_info::SLPFrameInfo;
-use super::pixel::PalettePixel;
-use super::pixel::RGBAPixel;
-use super::pixel::SLPPixelType;
-use super::row_bound::SLPRowBound;
-use super::row_bound::SLPRowBoundData;
-use super::types::SLPRowOffset;
-use super::unpack::UnpackFixedSize;
-use super::unpack::UnpackFrameData;
+use crate::slp::definitions::SLP_FRAME_BOUNDS_SIZE;
+use crate::slp::definitions::SLP_FRAME_CMD_OFFSET_SIZE;
+use crate::slp::frame_info::SLPFrameInfo;
+use crate::slp::pixel::PalettePixel;
+use crate::slp::pixel::RGBAPixel;
+use crate::slp::pixel::SLPPixelType;
+use crate::slp::row_bound::SLPRowBound;
+use crate::slp::row_bound::SLPRowBoundData;
+use crate::slp::types::SLPRowOffset;
+use crate::slp::unpack::UnpackFixedSize;
+use crate::slp::unpack::UnpackFrameData;
 
 /// SLP frame data.
 pub struct SLPFrameData {

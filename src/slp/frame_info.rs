@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 use crate::slp::unpack::UnpackFixedSize;
 
-use super::types::SLPVersion;
+use crate::slp::types::SLPVersion;
 
 /// SLP frame type.
 pub enum SLPFrameType {

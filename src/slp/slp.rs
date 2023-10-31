@@ -1,16 +1,16 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use super::definitions::SLP_FRAME_INFO_SIZE;
-use super::definitions::SLP_HEADER_SIZE;
-use super::frame::SLPFrame;
-use super::frame_info::SLPFrameInfo;
-use super::frame_info::SLPFrameInfoData;
-use super::frame_info::SLPFrameType;
-use super::header::SLPHeader;
-use super::header::SLPHeaderData;
-use super::pixel::PalettePixel;
-use super::unpack::UnpackFixedSize;
-use super::unpack::UnpackFrameData;
+use crate::slp::definitions::SLP_FRAME_INFO_SIZE;
+use crate::slp::definitions::SLP_HEADER_SIZE;
+use crate::slp::frame::SLPFrame;
+use crate::slp::frame_info::SLPFrameInfo;
+use crate::slp::frame_info::SLPFrameInfoData;
+use crate::slp::frame_info::SLPFrameType;
+use crate::slp::header::SLPHeader;
+use crate::slp::header::SLPHeaderData;
+use crate::slp::pixel::PalettePixel;
+use crate::slp::unpack::UnpackFixedSize;
+use crate::slp::unpack::UnpackFrameData;
 
 /// SLP file.
 pub struct SLPFile {

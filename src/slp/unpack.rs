@@ -1,8 +1,8 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use super::frame_info::SLPFrameInfo;
-use super::row_bound::SLPRowBound;
-use super::types::SLPRowOffset;
+use crate::slp::frame_info::SLPFrameInfo;
+use crate::slp::row_bound::SLPRowBound;
+use crate::slp::types::SLPRowOffset;
 
 /// Unpack a fixed size object in a file.
 pub trait UnpackFixedSize {
