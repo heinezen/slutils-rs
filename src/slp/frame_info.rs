@@ -109,7 +109,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let mut byte_reader = Cursor::new(&buffer[offset + 28..offset + 32]);
         let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        Self::new(
+        return Self::new(
             cmd_table_offset,
             bounds_table_offset,
             palette_offset,
@@ -118,7 +118,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
             height,
             anchor_x,
             anchor_y,
-        )
+        );
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
@@ -146,7 +146,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
         let mut byte_reader = Cursor::new(&bytes[28..32]);
         let anchor_y: i32 = byte_reader.read_i32::<LittleEndian>().unwrap();
 
-        Self::new(
+        return Self::new(
             cmd_table_offset,
             bounds_table_offset,
             palette_offset,
@@ -155,7 +155,7 @@ impl UnpackFixedSize for SLPFrameInfoData {
             height,
             anchor_x,
             anchor_y,
-        )
+        );
     }
 }
 

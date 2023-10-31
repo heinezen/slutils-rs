@@ -88,9 +88,9 @@ fn cmd_or_next(buffer: &[u8], cmd: u8, n: u8, pos: usize) -> (u8, usize) {
 
     if packed_in_cmd == 0 {
         let next = pos + 1;
-        (buffer[next], next)
+        return (buffer[next], next);
     } else {
-        (packed_in_cmd, pos)
+        return (packed_in_cmd, pos);
     }
 }
 
@@ -100,7 +100,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
         let cmd_table = Self::decode_cmd_table(buffer, frame_info);
         let row_data = Self::decode_frame(buffer, frame_info, &bounds_table, &cmd_table);
 
-        Self::new(bounds_table, cmd_table, row_data)
+        return Self::new(bounds_table, cmd_table, row_data);
     }
 
     // FIXME: This should return a result and use usize::try_from
@@ -112,7 +112,8 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             let bounds = SLPRowBound::from_buffer(buffer, offset);
             bounds_table.push(bounds);
         }
-        bounds_table
+
+        return bounds_table;
     }
 
     // FIXME: This should return a result and use usize::try_from
@@ -129,7 +130,8 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             ]);
             row_offsets.push(row);
         }
-        row_offsets
+
+        return row_offsets;
     }
 
     // FIXME: This should return a result and use usize::try_from
@@ -153,7 +155,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             row_data.push(row);
         }
 
-        row_data
+        return row_data;
     }
 
     fn decode_row(
@@ -186,7 +188,7 @@ impl UnpackFrameData<PalettePixel> for SLPFrame<PalettePixel> {
             row.push(PalettePixel::new(SLPPixelType::Transparent, 0));
         }
 
-        row
+        return row;
     }
 
     fn decode_row_cmds(

@@ -68,11 +68,11 @@ impl SLPRowBound {
     }
 
     pub const fn get_left(&self) -> u16 {
-        self.data.left
+        return self.data.left;
     }
 
     pub const fn get_right(&self) -> u16 {
-        self.data.right
+        return self.data.right;
     }
 }
 
@@ -98,6 +98,6 @@ impl UnpackFixedSize for SLPRowBound {
             return Self::new(0, 0, true);
         }
 
-        Self::new(left, right, false)
+        return Self::new(left, right, false);
     }
 }

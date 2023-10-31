@@ -1,11 +1,11 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-#![allow(dead_code)]
+#![allow(dead_code, clippy::needless_return)]
 #![forbid(unsafe_code)]
 #![warn(
     // TODO: frequently check
     // unreachable_pub,
-    // TODO: Activate if you're feeling like fixing stuff 
+    // TODO: Activate if you're feeling like fixing stuff
     clippy::pedantic,
     clippy::correctness,
     clippy::suspicious,
@@ -19,7 +19,7 @@
     unused_qualifications,
     clippy::nursery,
     bad_style,
-    dead_code,
+    // dead_code,
     improper_ctypes,
     missing_copy_implementations,
     missing_debug_implementations,
@@ -35,7 +35,7 @@
     unused_import_braces,
     unused_qualifications,
     unconditional_recursion,
-    unused,
+    // unused,
     unused_allocation,
     unused_comparisons,
     unused_parens,
