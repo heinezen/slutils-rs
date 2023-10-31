@@ -1,0 +1,11 @@
+# rustfmt configuration file
+
+# currently requires the nightly version of rustfmt
+combine_control_expr = false
+control_brace_style = "ClosingNextLine"
+fn_params_layout = "Vertical"
+format_strings = true
+hard_tabs = true
+imports_layout = "HorizontalVertical"
+group_imports = "StdExternalCrate"
+wrap_comments = true
