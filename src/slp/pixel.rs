@@ -7,22 +7,22 @@ use crate::util::pixel::RGBAConvertible;
 /// Pixel type in an SLP frame.
 pub enum SLPPixelType {
     /// 8-bit palette index
-    PALETTE,
+    Palette,
     /// Shadow color
-    SHADOW,
+    Shadow,
     /// Transparency
-    TRANSPARENT,
+    Transparent,
     /// non-outline Player color
-    PLAYER,
+    Player,
     /// Player color outline color
-    SPECIAL1,
+    Special1,
     /// Black outline color
-    SPECIAL2,
+    Special2,
 
     /// Shadow color used in SLPv4
-    SHADOWv4,
+    ShadowV4,
     /// non-outline Player color used in SLPv4
-    PLAYERv4,
+    PlayerV4,
 }
 
 /// Pixel in an SLP frame using palette indices for colors.
@@ -49,14 +49,14 @@ impl PalettePixel {
 }
 
 impl RGBAConvertible for PalettePixel {
-    fn to_rgba(&self, lookup: HashMap<usize, [u8; 4]>) -> [u8; 4] {
+    fn to_rgba(&self, _lookup: HashMap<usize, [u8; 4]>) -> [u8; 4] {
         match self.pixel_type {
-            SLPPixelType::PALETTE => [self.index, self.index, self.index, 255],
-            SLPPixelType::TRANSPARENT => [0, 0, 0, 0],
-            SLPPixelType::SHADOW | SLPPixelType::SHADOWv4 => [0, 0, 0, 100],
-            SLPPixelType::PLAYER | SLPPixelType::PLAYERv4 => [0, self.index, 0, 254],
-            SLPPixelType::SPECIAL1 => [0, 0, 0, 252],
-            SLPPixelType::SPECIAL2 => [0, 0, 0, 250],
+            SLPPixelType::Palette => [self.index, self.index, self.index, 255],
+            SLPPixelType::Transparent => [0, 0, 0, 0],
+            SLPPixelType::Shadow | SLPPixelType::ShadowV4 => [0, 0, 0, 100],
+            SLPPixelType::Player | SLPPixelType::PlayerV4 => [0, self.index, 0, 254],
+            SLPPixelType::Special1 => [0, 0, 0, 252],
+            SLPPixelType::Special2 => [0, 0, 0, 250],
         }
     }
 }
@@ -64,14 +64,12 @@ impl RGBAConvertible for PalettePixel {
 impl fmt::Display for PalettePixel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.pixel_type {
-            SLPPixelType::PALETTE => write!(f, "{:x}", self.index),
-            SLPPixelType::SHADOW => write!(f, "SS"),
-            SLPPixelType::TRANSPARENT => write!(f, "TT"),
-            SLPPixelType::PLAYER => write!(f, "PP"),
-            SLPPixelType::SPECIAL1 => write!(f, "LL"),
-            SLPPixelType::SPECIAL2 => write!(f, "XX"),
-            SLPPixelType::SHADOWv4 => write!(f, "SS"),
-            SLPPixelType::PLAYERv4 => write!(f, "PP"),
+            SLPPixelType::Palette => write!(f, "{:x}", self.index),
+            SLPPixelType::Shadow | SLPPixelType::ShadowV4 => write!(f, "SS"),
+            SLPPixelType::Transparent => write!(f, "TT"),
+            SLPPixelType::Player | SLPPixelType::PlayerV4 => write!(f, "PP"),
+            SLPPixelType::Special1 => write!(f, "LL"),
+            SLPPixelType::Special2 => write!(f, "XX"),
         }
     }
 }

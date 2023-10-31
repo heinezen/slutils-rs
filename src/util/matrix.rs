@@ -99,7 +99,7 @@ mod tests {
         // Create matrix:
         // 1 2 3
         // 4 5 6
-        let matrix = super::Matrix2D::new(2, 3, vec![1, 2, 3, 4, 5, 6]);
+        let matrix = crate::util::matrix::Matrix2D::new(2, 3, vec![1, 2, 3, 4, 5, 6]);
         assert_eq!(matrix.get_size(), (2, 3));
 
         assert_eq!(matrix[(0, 0)], 1);
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn create_matrix2d_zeros() {
         // Check NxN matrix
-        let matrix0 = super::Matrix2D::<u8>::zeros(3, 3);
+        let matrix0 = crate::util::matrix::Matrix2D::<u8>::zeros(3, 3);
         assert_eq!(matrix0.get_size(), (3, 3));
         for i in 0..3 {
             for j in 0..3 {
@@ -123,9 +123,9 @@ mod tests {
         }
 
         // Check MxN matrices
-        let matrix1 = super::Matrix2D::<u8>::zeros(2, 4);
+        let matrix1 = crate::util::matrix::Matrix2D::<u8>::zeros(2, 4);
         assert_eq!(matrix1.get_size(), (2, 4));
-        let matrix2 = super::Matrix2D::<u8>::zeros(4, 2);
+        let matrix2 = crate::util::matrix::Matrix2D::<u8>::zeros(4, 2);
         assert_eq!(matrix2.get_size(), (4, 2));
     }
 }

@@ -4,9 +4,9 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use std::fmt;
 use std::{io::Cursor, string::String};
 
-use super::definitions::SLP_VERSION_SIZE;
-use super::types::SLPVersion;
-use super::unpack::UnpackFixedSize;
+use crate::slp::definitions::SLP_VERSION_SIZE;
+use crate::slp::types::SLPVersion;
+use crate::slp::unpack::UnpackFixedSize;
 
 /// Header data in an SLP file.
 pub struct SLPHeaderData {

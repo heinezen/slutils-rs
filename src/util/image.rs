@@ -1,6 +1,6 @@
 // Copyright 2023-2023 the slutils-rs authors.
 
-use super::matrix::Matrix2D;
+use crate::util::matrix::Matrix2D;
 
 pub trait RGBAImageConvertible {
     /// Convert to a matrix of RGBA values.
